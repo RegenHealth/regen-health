@@ -11,16 +11,1136 @@
   <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
 
   <style>
-    /* (Paste the SAME CSS here as in the CodePen CSS panel) */
-    /* To keep this message shorter, reuse the entire CSS block from above. */
+/* Import Roboto */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
+
+:root {
+  --bg: #070d0a;
+  --bg-alt: #0c1510;
+  --bg-light: #121e18;
+  --bg-soft: #182821;
+  --text: #f7fafc;
+
+  --muted: #a7b5aa;
+  --accent: #f6ad55;
+  --accent-soft: rgba(246, 173, 85, 0.15);
+
+  --border-subtle: #1f2b25;
+
+  --font-main: 'Roboto', system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: var(--font-main);
+  background: radial-gradient(circle at top, var(--bg-soft) 0, var(--bg) 55%);
+  color: var(--text);
+  line-height: 1.6;
+}
+
+a { color: inherit; text-decoration: none; }
+
+/* NAV */
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 999;
+  background: rgba(9, 14, 11, 0.8);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+  padding: 0.65rem 1.25rem;
+}
+
+.nav-inner {
+  max-width: 1120px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.nav-logo img {
+  height: 42px;
+  width: auto;
+}
+
+.nav-links {
+  display: flex; gap: 1.6rem; align-items: center;
+}
+
+.nav-links a {
+  font-size: 0.95rem;
+  color: var(--muted);
+}
+
+.nav-links a:hover {
+  color: var(--accent);
+}
+
+.nav-toggle {
+  display: none;
+  font-size: 1.9rem;
+  cursor: pointer;
+}
+
+@media (max-width: 780px) {
+  .nav-toggle { display: block; }
+  .nav-links {
+    position: absolute; right: 0; top: 58px;
+    background: rgba(7, 11, 9, 0.98);
+    flex-direction: column; align-items: flex-start;
+    padding: 1.2rem 1.4rem;
+    border-left: 1px solid rgba(255,255,255,0.05);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    display: none;
+  }
+
+  .nav-links.open { display: flex; }
+}
+
+/* PAGE */
+.page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+}
+
+section {
+  padding: 3.5rem 0;
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+/* HERO + STATS */
+.hero {
+  position: relative;
+  padding: 3.5rem 0 !important;
+}
+
+.hero-wrapper {
+  display: grid;
+  grid-template-columns: 200px 1fr 200px;
+  gap: 2rem;
+  align-items: start;
+}
+
+.stats-column {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.stat-item {
+  background: rgba(246, 173, 85, 0.08);
+  border: 1px solid rgba(246, 173, 85, 0.3);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  animation: statPulse 3s ease-in-out infinite;
+}
+
+@keyframes statPulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  }
+  50% {
+    transform: scale(1.03);
+    box-shadow: 0 6px 20px rgba(246, 173, 85, 0.4);
+  }
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: var(--text);
+  line-height: 1.3;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.stat-number {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--accent);
+  line-height: 1;
+}
+
+.stat-trend {
+  font-size: 1.2rem;
+  color: var(--accent);
+  margin-right: 0.2rem;
+  font-weight: 700;
+}
+
+/* TYPOGRAPHY */
+h1,h2,h3,h4 { margin-bottom: .75rem; line-height:1.2;}
+h1 { font-size: clamp(2.4rem,4vw,3.2rem); }
+h2 { font-size: clamp(1.8rem,3vw,2.4rem); }
+h3 { font-size: 1.35rem; }
+h4 {
+  font-size: 1.05rem;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .12em;
+}
+
+p { margin-bottom: .9rem; color: var(--muted); }
+
+.pill {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.06);
+  padding: 0.25rem 0.85rem;
+  border-radius: 999px;
+  display: inline-flex; gap: .45rem;
+  align-items: center;
+  text-transform: uppercase;
+  font-size: .78rem;
+  letter-spacing: .16em;
+}
+
+.pill-dot {
+  width: 6px; height: 6px;
+  background: var(--accent);
+  border-radius: 999px;
+}
+
+/* CARDS */
+.card {
+  background: linear-gradient(145deg, var(--bg-alt), var(--bg-light));
+  border: 1px solid var(--border-subtle);
+  border-radius: 18px;
+  padding: 1.4rem 1.5rem;
+  box-shadow: 0 18px 45px rgba(0,0,0,0.4);
+}
+
+.card-hero {
+  background: radial-gradient(circle at top left,
+    var(--bg-soft) 0,
+    var(--bg-light) 45%,
+    var(--bg) 100%
+  );
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 22px;
+  padding: 2.2rem 2.1rem;
+  box-shadow: 0 28px 70px rgba(0,0,0,0.65);
+}
+
+.card-emphasis { border-left: 3px solid var(--accent); }
+
+.card-accent {
+  border: 1px solid rgba(246,173,85,0.45);
+  border-radius: 18px;
+  background: radial-gradient(circle at top, var(--accent-soft), transparent 60%);
+}
+
+/* BUTTONS */
+.btn {
+  padding: 0.7rem 1.4rem;
+  border-radius: 999px;
+  font-weight: 600;
+  font-size: .95rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  transition: .18s ease;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #f6ad55, #ed8936);
+  color: #1a202c;
+}
+
+.btn-secondary {
+  background: rgba(255,255,255,0.02);
+  border: 1px solid rgba(255,255,255,0.12);
+  color: var(--text);
+}
+
+.btn-small { font-size: .88rem; padding: .55rem 1rem; }
+
+.btn-row { margin-top: 1.4rem; display: flex; flex-wrap: wrap; gap: .85rem; }
+
+/* GRID */
+.grid-2-balanced {
+  display: grid;
+  grid-template-columns: repeat(2,1fr);
+  gap: 2rem;
+}
+
+@media(max-width:900px) {
+  .grid-2-balanced { grid-template-columns:1fr; }
+}
+
+/* CENTER / LABELS */
+.center { text-align:center; }
+.section-heading { text-align:center; margin-bottom:.75rem; }
+.section-sub { max-width:640px; margin:0 auto 1.5rem; text-align:center; }
+
+.number-badge {
+  width: 26px; height: 26px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.18);
+  color: var(--accent);
+  display: inline-flex; align-items:center; justify-content:center;
+  margin-bottom: .3rem;
+  font-size: .9rem;
+}
+
+footer {
+  padding-top: 2rem;
+  text-align: center;
+  font-size: .8rem;
+  color: var(--muted);
+}
+
+/* RESPONSIVE HERO */
+@media (max-width: 1200px) {
+  .hero-wrapper {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .stats-column {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .stat-item {
+    flex: 1 1 200px;
+    min-width: 180px;
+  }
+}
+
+@media (max-width: 768px) {
+  .stat-item {
+    flex: 1 1 100%;
+  }
+
+  .stat-number {
+    font-size: 1.75rem;
+  }
+}
+
+/* PATHS SECTION */
+.two-paths-label {
+  margin-bottom: 2rem;
+  color: var(--muted);
+}
+
+.path-icon {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.path-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: var(--text);
+}
+
+.path-list-title {
+  font-weight: 600;
+  margin-top: 1rem;
+  margin-bottom: 0.5rem;
+  color: var(--text);
+}
+
+.list {
+  list-style: none;
+  padding-left: 0;
+  margin-bottom: 1.5rem;
+}
+
+.list li {
+  padding-left: 1.5rem;
+  margin-bottom: 0.5rem;
+  position: relative;
+  color: var(--muted);
+  line-height: 1.6;
+}
+
+.list li:before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.callout {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.callout-strong {
+  font-weight: 600;
+  color: var(--text);
+  font-size: 1.15rem;
+}
+
+.hero-highlight {
+  color: var(--accent);
+  font-style: italic;
+}
+
+.hero-tagline {
+  font-size: 1.15rem;
+  margin-bottom: 1rem;
+}
+
+.hero-sub {
+  font-size: 1.05rem;
+  margin-bottom: 1.5rem;
+}
+
+.hidden { display:none; }
+
+/* QUIZ STYLES */
+#quiz-card {
+  background: linear-gradient(135deg, #fdf7ec, #f7ebd5);
+  color: #333;
+  border-radius: 20px;
+  padding: 2rem 2.5rem;
+  box-shadow: 0 18px 40px rgba(0,0,0,0.45);
+}
+
+#quiz-card h3 {
+  text-align:center;
+  margin-top:0;
+  margin-bottom:0.5rem;
+  font-weight:600;
+  color:#222;
+}
+
+#quiz-card p.quiz-intro {
+  text-align:center;
+  margin-bottom:1.5rem;
+  font-size:0.98rem;
+  color:#555;
+}
+
+.quiz-progress {
+  text-align: center;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  color: #2f7c8f;
+}
+
+.quiz-question {
+  margin-bottom: 1.5rem;
+}
+
+.quiz-question p {
+  margin-bottom: 0.75rem;
+  font-weight: 500;
+  font-size: 1.12rem;
+  color:#222;
+}
+
+.quiz-option {
+  margin-bottom: 0.4rem;
+  display: block;
+  font-size: 0.96rem;
+  cursor: pointer;
+  color:#333;
+}
+
+.quiz-option input {
+  margin-right: 0.4rem;
+  cursor: pointer;
+}
+
+.quiz-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  gap: 0.5rem;
+}
+
+.quiz-nav button {
+  border: none;
+  cursor: pointer;
+  padding: 0.7rem 1.4rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.2s;
+  font-family:'Roboto',system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}
+
+.btn-back {
+  background: #f2f2f2;
+  color: #555;
+}
+
+.btn-back:hover {
+  background: #e6e6e6;
+}
+
+.btn-next {
+  background: #2f7c8f;
+  color: #fff;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.18);
+}
+
+.btn-next:hover {
+  background: #296a7a;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.22);
+}
+
+.quiz-nav button:active {
+  transform: translateY(1px);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+}
+
+#quiz-result {
+  margin-top: 2rem;
+  text-align: center;
+  padding: 1.5rem 1rem;
+  border-radius: 12px;
+  background: #fdf7ec;
+  border: 1px solid #f1e4cf;
+  color:#333;
+}
+
+#quiz-result h4 {
+  margin-top: 0;
+  margin-bottom: 0.75rem;
+  font-weight: 700;
+  font-size: 1.2rem;
+  color:#222;
+}
+
+#quiz-result p {
+  margin: 0;
+  font-size: 0.98rem;
+  line-height: 1.5;
+  color: #444;
+}
+
+#quiz-cta {
+  margin-top:2rem;
+}
+
+#quiz-cta .card {
+  background: linear-gradient(145deg, var(--bg-alt), var(--bg-light));
+  color:var(--text);
+}
+
+#quiz-cta h3 {
+  margin-top:0;
+  margin-bottom:0.6rem;
+}
+
+@media (max-width: 600px) {
+  #quiz-card {
+    padding: 1.5rem 1.25rem;
+  }
+  .quiz-nav {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+  .quiz-nav button { width: 100%; }
+}
+
   </style>
 </head>
 <body>
 
-  <!-- (Paste the SAME HTML here as in the CodePen HTML panel) -->
+<!-- NAV -->
+<nav class="nav">
+  <div class="nav-inner">
+
+    <!-- LOGO -->
+    <div class="nav-logo">
+      <a href="#top">
+        <!-- Replace src with your actual hosted logo later -->
+        <img src="https://via.placeholder.com/160x40?text=Regen+Health+Logo" alt="Regen Health Logo">
+      </a>
+    </div>
+
+    <!-- MOBILE MENU -->
+    <div class="nav-toggle"
+         onclick="document.querySelector('.nav-links').classList.toggle('open')">
+      ☰
+    </div>
+
+    <div class="nav-links">
+      <a href="#how-we-help">How We Help</a>
+      <a href="#paths">Start</a>
+      <a href="#prioritization">Why This Quiz</a>
+      <a href="#quiz" class="btn btn-primary btn-small">Take Quiz</a>
+    </div>
+  </div>
+</nav>
+
+<!-- PAGE WRAPPER -->
+<div class="page">
+
+  <!-- HERO WITH STATS -->
+  <section class="hero" id="top">
+    <div class="hero-wrapper">
+      
+      <!-- LEFT STATS COLUMN -->
+      <div class="stats-column">
+        <div class="stat-item">
+          <div class="stat-label">Americans with Chronic Disease</div>
+          <div class="stat-number"><span class="stat-trend">↑</span><span class="counter" data-target="60">0</span>%</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">US Adults Obese (2024)</div>
+          <div class="stat-number"><span class="stat-trend">↑</span><span class="counter" data-target="42">0</span>%</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Americans with Diabetes</div>
+          <div class="stat-number"><span class="stat-trend">↑</span><span class="counter" data-target="37">0</span>M</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Adults with Prediabetes</div>
+          <div class="stat-number"><span class="stat-trend">↑</span><span class="counter" data-target="88">0</span>M</div>
+        </div>
+      </div>
+
+      <!-- CENTER HERO CONTENT -->
+      <div class="card-hero">
+        <div class="pill"><span class="pill-dot"></span>A Whole Different Health Experience</div>
+        <h1>If You're Really Healthy…<br>I Mean <span class="hero-highlight">REALLY</span> Healthy…</h1>
+
+        <p class="hero-tagline">
+          You are harder to sell to. That's why nobody wants you to be healthy.
+          Healthy people are not easy to manipulate and control. Happy, healthy, and
+          whole people want for nothing.
+        </p>
+        <p class="hero-tagline">
+          The stats to the left and right represent growing industries that are profiting off of you being sick. They do not make more money the healthier you get. They make less. The only way to solve the health care crisis is for the system to make less from you being sick. Imagine being so healthy that the system could not make any money off of your health.
+        </p>
+
+        <p class="hero-sub">
+          We would like to be a part of helping you get there—if you're not there already.
+        </p>
+
+        <div class="btn-row">
+          <a class="btn btn-primary" href="#how-we-help">See How We Help</a>
+          <a class="btn btn-secondary" href="#paths">Start Your Journey</a>
+        </div>
+      </div>
+
+      <!-- RIGHT STATS COLUMN -->
+      <div class="stats-column">
+        <div class="stat-item">
+          <div class="stat-label">Americans on Prescriptions</div>
+          <div class="stat-number"><span class="stat-trend">↑</span><span class="counter" data-target="133">0</span>M</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">US Healthcare Spending</div>
+          <div class="stat-number"><span class="stat-trend">↑</span>$<span class="counter" data-target="4">0</span>T</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Live Paycheck to Paycheck</div>
+          <div class="stat-number"><span class="stat-trend">↑</span><span class="counter" data-target="78">0</span>%</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-label">Trust in Healthcare System</div>
+          <div class="stat-number"><span class="stat-trend">↓</span><span class="counter" data-target="12">0</span>%</div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- HEALTHY PEOPLE ARE A THREAT -->
+  <section id="threat">
+    <div class="section-heading">
+      <h2>Healthy People Are Not Profitable to the System</h2>
+    </div>
+
+    <div class="section-sub">
+      <p>When you're truly healthy—physically, mentally, emotionally—you don't need much.</p>
+    </div>
+
+    <div class="card card-emphasis">
+      <p>You're clear. You're present. You're in control.</p>
+      <p>And that makes you very hard to profit from.</p>
+    </div>
+  </section>
+
+  <!-- HOW WE HELP -->
+  <section id="how-we-help">
+    <div class="section-heading">
+      <h4>What We Actually Do</h4>
+      <h2>Here's How We'll Help You Get There</h2>
+    </div>
+
+    <div class="section-sub">
+      <p>We don't sell protocols. <strong>We teach you how to own your health—completely.</strong></p>
+    </div>
+
+    <div class="grid-2-balanced">
+
+      <div class="card">
+        <div class="number-badge">1</div>
+        <h3>We Help You Navigate the Propaganda</h3>
+        <p>Most of what you've been told about food, movement, and "normal labs" has more to do with industry profit than your physiology. We help you see through that.</p>
+      </div>
+
+      <div class="card">
+        <div class="number-badge">2</div>
+        <h3>We Teach You the Non-Negotiables</h3>
+        <p>Your body requires breathing, hydration with minerals, true rest, movement, and nervous system safety. These come before protocols, hacks, or stacks.</p>
+      </div>
+
+      <div class="card">
+        <div class="number-badge">3</div>
+        <h3>We Teach You to Read Your Body</h3>
+        <p>Your body has been speaking to you for years through stress, fatigue, cravings, pain, and patterns. We help you understand what those signals actually mean.</p>
+      </div>
+
+      <div class="card">
+        <div class="number-badge">4</div>
+        <h3>We Help You Understand Stress</h3>
+        <p>Stress drives degeneration—emotionally, structurally, and biochemically. We show you how that cycle works and how to interrupt it in a sustainable way.</p>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- PRIORITIZATION BLOCK -->
+  <section id="prioritization">
+    <div class="section-heading">
+      <h2>Why Prioritization Matters More Than More Testing</h2>
+    </div>
+
+    <div class="section-sub">
+      <p>Most health systems treat every issue, symptom, or lab marker as if it carries equal weight. But in the human body, <strong>not everything is equally important</strong>—and not everything should be addressed at the same time.</p>
+    </div>
+
+    <div class="card card-accent">
+      <p>In a typical experience, you take a dozen tests, get pages of numbers, and walk away with a list of “out of range” markers—plus a stack of supplements or medications. You’re taught what’s wrong, but you’re never taught what matters <em>first</em>.</p>
+
+      <p>True progress depends on understanding <strong>order</strong>, not volume.</p>
+
+      <p>Your body has a real hierarchy:</p>
+      <ul class="list">
+        <li><strong>Respiration</strong> – how you breathe sets your chemical and electrical baseline.</li>
+        <li><strong>Hydration + minerals</strong> – your ability to move water and electricity through your cells.</li>
+        <li><strong>Electrolyte balance (especially sodium + potassium)</strong> – your on/off switch for stress and energy.</li>
+        <li><strong>Pain + physical load</strong> – how much of your mineral and nervous system budget is spent just coping.</li>
+        <li><strong>Emotional + nervous system stress</strong> – whether your body feels safe enough to heal at all.</li>
+        <li><strong>Toxic burden</strong> – how much incoming stress your detox systems are trying to keep up with.</li>
+      </ul>
+
+      <p>When these priorities are addressed in the correct sequence, healing accelerates. When they’re treated as equal or tackled out of order, progress stalls and confusion grows.</p>
+
+      <p class="callout-strong">To help you understand your own hierarchy, we built a simple but powerful assessment that identifies <em>your</em> highest-leverage starting point.</p>
+
+      <p>Start with the quiz below to see where your body needs focus first—and why.</p>
+    </div>
+  </section>
+
+  <!-- QUIZ SECTION -->
+  <section id="quiz">
+    <div id="quiz-card">
+      <h3>Find Your Starting Point</h3>
+      <p class="quiz-intro">
+        Answer a few quick questions to see where your body needs help first.
+      </p>
+
+      <div class="quiz-progress" id="quiz-progress"></div>
+
+      <div id="question-container"></div>
+
+      <div class="quiz-nav">
+        <button type="button" class="btn-back" id="back-btn">Back</button>
+        <button type="button" class="btn-next" id="next-btn">Next</button>
+      </div>
+
+      <div id="quiz-result" class="hidden">
+        <h4 id="result-title"></h4>
+        <p id="result-body"></p>
+      </div>
+
+      <div id="quiz-cta" class="hidden">
+        <div class="card">
+          <h3 id="cta-title"></h3>
+          <p id="cta-body"></p>
+          <div class="btn-row" id="cta-buttons"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- TWO PATHS -->
+  <section id="paths">
+    <div class="section-heading">
+      <h2>Two Ways to Begin</h2>
+    </div>
+
+    <div class="two-paths-label center">
+      Some need to learn first. Others need data first.  
+      You'll eventually get both.
+    </div>
+
+    <div class="grid-2-balanced">
+
+      <!-- Education -->
+      <div class="card">
+        <div class="path-icon">🧠</div>
+        <div class="path-title">Start With Education</div>
+        <p>Learn how your body really works. Understand stress physiology, minerals, cellular health, and what “order” actually looks like.</p>
+
+        <div class="path-list-title">This path is for you if:</div>
+        <ul class="list">
+          <li>You want understanding before testing</li>
+          <li>Protocols have never explained the “why” behind your symptoms</li>
+          <li>You want systems, not symptom-chasing</li>
+          <li>You want clarity before spending more money on labs</li>
+        </ul>
+
+        <div class="btn-row">
+          <a class="btn btn-primary btn-small" href="#quiz">Take the Free Quiz</a>
+        </div>
+      </div>
+
+      <!-- Testing -->
+      <div class="card" id="testing">
+        <div class="path-icon">🔬</div>
+        <div class="path-title">Start With Testing</div>
+        <p>Order HTMA or bloodwork to see mineral patterns, stress markers, and deeper layers of your physiology—then interpret them in the right order.</p>
+
+        <div class="path-list-title">This path is for you if:</div>
+        <ul class="list">
+          <li>You're done guessing</li>
+          <li>Symptoms aren't resolving and you want more data</li>
+          <li>Labs say “normal” but you don’t feel normal</li>
+          <li>You want a personalized roadmap based on your results</li>
+        </ul>
+
+        <div class="btn-row">
+          <a class="btn btn-secondary btn-small" href="#cta-final">Talk About Testing Options</a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- FINAL CTA -->
+  <section id="cta-final">
+    <div class="callout">
+      <h2>Ready to End the Madness?</h2>
+      <p>You've tried everything. Diets, supplements, practitioners.</p>
+      <p>What if the problem was never you?</p>
+
+      <p class="callout-strong">Our mission is to do our job so well you won’t need us anymore—and your life becomes proof that we can take our health back.</p>
+
+      <div class="btn-row center">
+        <a class="btn btn-primary" href="#quiz">Take the Quiz</a>
+        <a class="btn btn-secondary" href="#testing">Explore Testing</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    © <span id="year"></span> Regen Health Institute · Own your health. End the madness.
+  </footer>
+
+</div>
+
 
   <script>
-    /* (Paste the SAME JS here as in the CodePen JS panel) */
+ // Footer year
+document.getElementById("year").textContent = new Date().getFullYear();
+
+// Animated counter function
+function animateCounter(element) {
+  const target = parseInt(element.getAttribute('data-target'));
+  const duration = 2000;
+  const step = target / (duration / 16);
+  let current = 0;
+
+  const timer = setInterval(() => {
+    current += step;
+    if (current >= target) {
+      element.textContent = target;
+      clearInterval(timer);
+    } else {
+      element.textContent = Math.floor(current);
+    }
+  }, 16);
+}
+
+// Start counters on load
+window.addEventListener('load', () => {
+  const counters = document.querySelectorAll('.counter');
+  counters.forEach(counter => animateCounter(counter));
+});
+
+/* ========= QUIZ DATA ========= */
+const questions = [
+  // Malnourishment (1–7)
+  { id: 1, block: 'malnourishment', text: 'Do you feel tired even after sleeping a full night?' },
+  { id: 2, block: 'malnourishment', text: 'Do you experience energy crashes mid-morning or mid-afternoon?' },
+  { id: 3, block: 'malnourishment', text: 'Do you feel worse when you get stressed, even if it’s a small stressor?' },
+  { id: 4, block: 'malnourishment', text: 'Do you crave salt, sugar, or stimulants to get through the day?' },
+  { id: 5, block: 'malnourishment', text: 'Do you feel lightheaded, shaky, or irritable when hungry?' },
+  { id: 6, block: 'malnourishment', text: 'Do you struggle to stay hydrated, or feel like water “goes right through you”?' },
+  { id: 7, block: 'malnourishment', text: 'Do you feel physically depleted by even small tasks or workouts?' },
+
+  // Toxicity (8–14)
+  { id: 8, block: 'toxicity', text: 'Do you get headaches, migraines, or pressure behind the eyes?' },
+  { id: 9, block: 'toxicity', text: 'Do strong smells (cleaners, perfume, fragrances) bother you?' },
+  { id: 10, block: 'toxicity', text: 'Do you feel worse in certain environments (home, office, car, old buildings)?' },
+  { id: 11, block: 'toxicity', text: 'Do you struggle with constipation, loose stools, or an unpredictable digestive system?' },
+  { id: 12, block: 'toxicity', text: 'Do you often feel puffy, swollen, or inflamed?' },
+  { id: 13, block: 'toxicity', text: 'Do you experience skin issues (rashes, acne, itching) that come and go?' },
+  { id: 14, block: 'toxicity', text: 'Do you wake up feeling toxic — groggy, heavy, or foggy — even without drinking alcohol?' },
+
+  // Physical Trauma (15–21)
+  { id: 15, block: 'physical', text: 'Do you experience chronic pain or discomfort (back, neck, joints, muscles)?' },
+  { id: 16, block: 'physical', text: 'Do you feel physically tense most of the time, even at rest?' },
+  { id: 17, block: 'physical', text: 'Does your pain get worse with stress or emotional tension?' },
+  { id: 18, block: 'physical', text: 'Do you feel like your posture or breathing has changed over time?' },
+  { id: 19, block: 'physical', text: 'Do you get injured easily or feel sore longer than you should after activity?' },
+  { id: 20, block: 'physical', text: 'Do you have trouble relaxing your body without effort?' },
+  { id: 21, block: 'physical', text: 'Does physical discomfort limit your daily activities or focus?' },
+
+  // Emotional Trauma (22–28)
+  { id: 22, block: 'emotional', text: 'Do you feel overwhelmed easily, even by small things?' },
+  { id: 23, block: 'emotional', text: 'Do you carry tension in your chest, stomach, or throat when stressed?' },
+  { id: 24, block: 'emotional', text: 'Do you have difficulty feeling safe or settled in your body?' },
+  { id: 25, block: 'emotional', text: 'Do you struggle with repeating emotional patterns or relationship stress?' },
+  { id: 26, block: 'emotional', text: 'Did you experience significant stress or instability before age 7?' },
+  { id: 27, block: 'emotional', text: 'Do you often feel disconnected, numb, or shut down when overwhelmed?' },
+  { id: 28, block: 'emotional', text: 'Do you have trouble switching off your thoughts, even when you want to relax?' },
+];
+
+const resultContent = {
+  malnourishment: {
+    title: 'Your nutrient deficiencies are driving your stress.',
+    body: 'Being low in key nutrients like potassium and magnesium can keep you locked in a stress loop, even when your life feels “manageable.” Your cells simply don’t have enough fuel or minerals to regulate your nervous system, hormones, and energy. Right now, the priority is restoring nourishment in the correct order—breathing, hydration with minerals, and stabilizing sodium and potassium so your body can finally come out of survival mode.'
+  },
+  toxicity: {
+    title: 'Your toxic load is overwhelming your body’s ability to heal.',
+    body: 'The load of toxins in your system is high enough that your body is prioritizing survival over repair. When that happens, nutrients can’t get where they need to go, and your symptoms become a warning light, not a failure. Right now, the priority is supporting your detoxification pathways first—reducing what’s coming in and opening the exits, so your cells can start catching up again.'
+  },
+  physical: {
+    title: 'Your physical pain is consuming your energy and nutrients.',
+    body: 'Your physical pain is so high that your body is burning through minerals and resources just to cope. Pain keeps your nervous system in a constant state of alert, which blocks deep recovery, sleep quality, and nutrient absorption. Right now, the priority is reducing the physical stress on your system—restoring breathing, position, and key nutritional elements that can dramatically reduce pain and free up energy for healing.'
+  },
+  emotional: {
+    title: 'Your stress load is so high your body can’t keep up nutritionally.',
+    body: 'Emotional trauma—especially under age 7—wires us differently. Until we start to gently rewire those patterns, we tend to recreate the same emotional stress over and over. That constant survival mode blocks nutrient delivery, mineral balance, and deep healing. Right now, the priority is reducing the stress load on your system—creating safety in your nervous system so your body can finally use the nutrition and support you give it.'
+  }
+};
+
+const ctaContent = {
+  malnourishment: {
+    title: 'Your Best Next Step',
+    body: 'Because your primary issue is nourishment and mineral balance, you’ll get the most traction by pairing focused education with targeted testing. We recommend starting with our mineral-focused testing options so you can see exactly how your sodium, potassium, calcium, and magnesium are behaving—and what to do about it.',
+    buttons: [
+      { label: 'Explore Testing Options', href: '#testing', primary: true },
+      { label: 'Review Both Starting Paths', href: '#paths', primary: false }
+    ]
+  },
+  toxicity: {
+    title: 'Your Best Next Step',
+    body: 'Your results suggest that toxic load and detox capacity are major drivers of how you feel. Before adding more supplements or protocols, it’s critical to see what your body is actually carrying. Testing plus education on how to lower your daily toxic burden will give you the most leverage.',
+    buttons: [
+      { label: 'Talk About Detox & Testing', href: '#testing', primary: true },
+      { label: 'Learn How We Prioritize Detox', href: '#prioritization', primary: false }
+    ]
+  },
+  physical: {
+    title: 'Your Best Next Step',
+    body: 'Because physical pain and structural stress are taking so much of your energy, the most effective starting point is education and gentle, nervous-system-friendly changes. Understanding how breathing, position, and minerals interact with pain will give you real traction before you add more complexity.',
+    buttons: [
+      { label: 'Start With Education', href: '#paths', primary: true },
+      { label: 'Retake or Share Your Results', href: '#quiz', primary: false }
+    ]
+  },
+  emotional: {
+    title: 'Your Best Next Step',
+    body: 'Your results show that emotional load and nervous system stress are leading the way. The most important move you can make is to learn how stress physiology, minerals, and early wiring interact—then build safety into your system on purpose.',
+    buttons: [
+      { label: 'Start With Education', href: '#paths', primary: true },
+      { label: 'Explore Our Philosophy', href: '#prioritization', primary: false }
+    ]
+  }
+};
+
+let currentIndex = 0;
+const answers = {};
+
+const questionContainer = document.getElementById('question-container');
+const progressEl = document.getElementById('quiz-progress');
+const backBtn = document.getElementById('back-btn');
+const nextBtn = document.getElementById('next-btn');
+const navEl = document.querySelector('.quiz-nav');
+const resultBox = document.getElementById('quiz-result');
+const resultTitle = document.getElementById('result-title');
+const resultBody = document.getElementById('result-body');
+const ctaBox = document.getElementById('quiz-cta');
+const ctaTitle = document.getElementById('cta-title');
+const ctaBody = document.getElementById('cta-body');
+const ctaButtons = document.getElementById('cta-buttons');
+
+function renderQuestion() {
+  const q = questions[currentIndex];
+  const total = questions.length;
+
+  progressEl.textContent = `Question ${currentIndex + 1} of ${total}`;
+
+  const savedValue = answers[q.id] !== undefined ? String(answers[q.id]) : null;
+
+  questionContainer.innerHTML = `
+    <div class="quiz-question">
+      <p><strong>Q${q.id}.</strong> ${q.text}</p>
+      <label class="quiz-option">
+        <input type="radio" name="q${q.id}" value="0" ${savedValue === '0' ? 'checked' : ''}>
+        Never / Not true
+      </label>
+      <label class="quiz-option">
+        <input type="radio" name="q${q.id}" value="1" ${savedValue === '1' ? 'checked' : ''}>
+        Occasionally
+      </label>
+      <label class="quiz-option">
+        <input type="radio" name="q${q.id}" value="2" ${savedValue === '2' ? 'checked' : ''}>
+        Often
+      </label>
+      <label class="quiz-option">
+        <input type="radio" name="q${q.id}" value="3" ${savedValue === '3' ? 'checked' : ''}>
+        Almost always
+      </label>
+    </div>
+  `;
+
+  document.getElementById('quiz-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  if (currentIndex === 0) backBtn.style.visibility = 'hidden';
+  else backBtn.style.visibility = 'visible';
+
+  if (currentIndex === total - 1) nextBtn.textContent = 'See My Results';
+  else nextBtn.textContent = 'Next';
+
+  resultBox.classList.add('hidden');
+  ctaBox.classList.add('hidden');
+}
+
+function collectCurrentAnswer() {
+  const q = questions[currentIndex];
+  const selected = document.querySelector(`input[name="q${q.id}"]:checked`);
+  if (!selected) {
+    alert('Please select an answer to continue.');
+    return null;
+  }
+  answers[q.id] = parseInt(selected.value, 10);
+  return answers[q.id];
+}
+
+function calculateAndShowResult() {
+  const scores = {
+    malnourishment: 0,
+    toxicity: 0,
+    physical: 0,
+    emotional: 0
+  };
+
+  questions.forEach(q => {
+    const val = answers[q.id];
+    if (typeof val === 'number') scores[q.block] += val;
+  });
+
+  const blocks = ['malnourishment', 'toxicity', 'physical', 'emotional'];
+
+  let highestBlock = null;
+  let highestScore = -1;
+  blocks.forEach(b => {
+    if (scores[b] > highestScore) {
+      highestScore = scores[b];
+      highestBlock = b;
+    }
+  });
+
+  const malScore = scores.malnourishment;
+  const othersMax = Math.max(scores.toxicity, scores.physical, scores.emotional);
+  let primaryBlock = highestBlock;
+
+  if (malScore >= othersMax + 4) {
+    primaryBlock = 'malnourishment';
+  } else {
+    const topBlocks = blocks.filter(b => scores[b] === highestScore);
+    if (topBlocks.length > 1) {
+      const hierarchy = ['emotional', 'physical', 'toxicity', 'malnourishment'];
+      for (const h of hierarchy) {
+        if (topBlocks.includes(h)) {
+          primaryBlock = h;
+          break;
+        }
+      }
+    } else {
+      primaryBlock = highestBlock;
+    }
+  }
+
+  const result = resultContent[primaryBlock];
+  const cta = ctaContent[primaryBlock];
+
+  // Hide question and nav; show result + CTA
+  questionContainer.innerHTML = '';
+  navEl.classList.add('hidden');
+  progressEl.textContent = '';
+
+  resultTitle.textContent = result.title;
+  resultBody.textContent = result.body;
+  resultBox.classList.remove('hidden');
+
+  ctaTitle.textContent = cta.title;
+  ctaBody.textContent = cta.body;
+  ctaButtons.innerHTML = '';
+  cta.buttons.forEach(btn => {
+    const a = document.createElement('a');
+    a.href = btn.href;
+    a.className = 'btn ' + (btn.primary ? 'btn-primary' : 'btn-secondary');
+    a.textContent = btn.label;
+    ctaButtons.appendChild(a);
+  });
+  ctaBox.classList.remove('hidden');
+
+  ctaBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// Event listeners
+nextBtn.addEventListener('click', () => {
+  const val = collectCurrentAnswer();
+  if (val === null) return;
+
+  if (currentIndex < questions.length - 1) {
+    currentIndex++;
+    renderQuestion();
+  } else {
+    calculateAndShowResult();
+  }
+});
+
+backBtn.addEventListener('click', () => {
+  if (currentIndex > 0) {
+    currentIndex--;
+    renderQuestion();
+  }
+});
+
+// Initial render
+renderQuestion();
+
   </script>
 </body>
 </html>
