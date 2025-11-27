@@ -1065,25 +1065,476 @@
 
 </div>
 <script>
-  // Set footer year
-  const yearEl = document.getElementById("year");
-  if (yearEl) {
-    yearEl.textContent = new Date().getFullYear();
+  // ---------------------------
+  // YEAR IN FOOTER
+  // ---------------------------
+  (function () {
+    const yearEl = document.getElementById("year");
+    if (yearEl) {
+      yearEl.textContent = new Date().getFullYear();
+    }
+  })();
+
+  // ---------------------------
+  // THEME TOGGLE (DARK / LIGHT)
+  // ---------------------------
+  (function () {
+    const toggle = document.getElementById("theme-toggle");
+    if (!toggle) return;
+
+    // Load saved theme or default to dark
+    const saved = localStorage.getItem("regen-theme");
+    if (saved === "light") {
+      document.body.classList.add("light-theme");
+    }
+
+    function updateLabel() {
+      const light = document.body.classList.contains("light-theme");
+      toggle.textContent = light ? "☾ Dark" : "☀ Light";
+    }
+
+    updateLabel();
+
+    toggle.addEventListener("click", () => {
+      document.body.classList.toggle("light-theme");
+      const light = document.body.classList.contains("light-theme");
+      localStorage.setItem("regen-theme", light ? "light" : "dark");
+      updateLabel();
+    });
+  })();
+
+  // ---------------------------
+  // FADE-IN SECTIONS ON SCROLL
+  // ---------------------------
+  (function () {
+    const fadeSections = document.querySelectorAll(".fade-section");
+    if (!fadeSections.length) return;
+
+    // Fallback for older browsers
+    if (!("IntersectionObserver" in window)) {
+      fadeSections.forEach(sec => sec.classList.add("visible"));
+      return;
+    }
+
+    const fadeObserver = new IntersectionObserver(
+      (entries, observer) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("visible");
+            observer.unobserve(entry.target); // animate once
+          }
+        });
+      },
+      { threshold: 0.22 }
+    );
+
+    fadeSections.forEach(sec => fadeObserver.observe(sec));
+  })();
+
+  // ---------------------------
+  // QUIZ LOGIC
+  // ---------------------------
+
+  // 4 categories: malnourishment, toxicity, physical, emotional
+  const questions = [
+    // MALNOURISHMENT-LEANING
+    {
+      text: "How often do you feel a mid-day energy crash that you 'fix' with caffeine or sugar?",
+      options: [
+        { label: "Rarely or never", scores: { malnourishment: 0 } },
+        { label: "1–2 days per week", scores: { malnourishment: 1 } },
+        { label: "Most days", scores: { malnourishment: 2 } },
+        { label: "Every single day", scores: { malnourishment: 3 } }
+      ]
+    },
+    {
+      text: "How steady is your blood sugar (energy, mood, focus) between meals?",
+      options: [
+        { label: "Very steady", scores: { malnourishment: 0 } },
+        { label: "Sometimes wobbly", scores: { malnourishment: 1 } },
+        { label: "Frequently up and down", scores: { malnourishment: 2 } },
+        { label: "Constant rollercoaster", scores: { malnourishment: 3 } }
+      ]
+    },
+    {
+      text: "How often do you salt your food or crave salty foods?",
+      options: [
+        { label: "Rarely crave salt", scores: { malnourishment: 0 } },
+        { label: "Sometimes crave salt", scores: { malnourishment: 1 } },
+        { label: "Often crave salt", scores: { malnourishment: 2 } },
+        { label: "Feel like I 'need' salt all the time", scores: { malnourishment: 3 } }
+      ]
+    },
+    {
+      text: "How much real, mineral-rich food (meats, eggs, roots, fruits) do you eat daily?",
+      options: [
+        { label: "Most of my food is whole and real", scores: { malnourishment: 0 } },
+        { label: "About half", scores: { malnourishment: 1 } },
+        { label: "Mostly packaged/quick food", scores: { malnourishment: 2 } },
+        { label: "Almost all ultra-processed foods", scores: { malnourishment: 3 } }
+      ]
+    },
+
+    // TOXICITY-LEANING
+    {
+      text: "How often do you experience headaches, brain fog, or 'hungover' feeling without alcohol?",
+      options: [
+        { label: "Rarely or never", scores: { toxicity: 0 } },
+        { label: "Sometimes", scores: { toxicity: 1 } },
+        { label: "Most days", scores: { toxicity: 2 } },
+        { label: "Daily and disruptive", scores: { toxicity: 3 } }
+      ]
+    },
+    {
+      text: "How sensitive are you to smells (perfumes, cleaners, exhaust, chemicals)?",
+      options: [
+        { label: "Not sensitive", scores: { toxicity: 0 } },
+        { label: "Mildly sensitive", scores: { toxicity: 1 } },
+        { label: "Strongly sensitive", scores: { toxicity: 2 } },
+        { label: "Overwhelmed by many smells", scores: { toxicity: 3 } }
+      ]
+    },
+    {
+      text: "How often do you have skin reactions (rashes, hives, unexplained itching)?",
+      options: [
+        { label: "Rarely or never", scores: { toxicity: 0 } },
+        { label: "Occasionally", scores: { toxicity: 1 } },
+        { label: "Frequently", scores: { toxicity: 2 } },
+        { label: "Almost always something flaring", scores: { toxicity: 3 } }
+      ]
+    },
+    {
+      text: "How is your bowel function (pooping) most days?",
+      options: [
+        { label: "Once or twice daily, easy", scores: { toxicity: 0 } },
+        { label: "Some days skipped or loose", scores: { toxicity: 1 } },
+        { label: "Often constipated or loose", scores: { toxicity: 2 } },
+        { label: "Severely inconsistent or chronically stuck", scores: { toxicity: 3 } }
+      ]
+    },
+
+    // PHYSICAL TRAUMA / PAIN-LEANING
+    {
+      text: "How often do you experience chronic pain or tension that doesn’t fully go away?",
+      options: [
+        { label: "Rarely or never", scores: { physical: 0 } },
+        { label: "1–2 days per week", scores: { physical: 1 } },
+        { label: "Most days", scores: { physical: 2 } },
+        { label: "Constantly managing pain", scores: { physical: 3 } }
+      ]
+    },
+    {
+      text: "Do you have an old injury or surgery that still changes how you move or live?",
+      options: [
+        { label: "No significant history", scores: { physical: 0 } },
+        { label: "One mild thing, mostly healed", scores: { physical: 1 } },
+        { label: "One major injury that still affects me", scores: { physical: 2 } },
+        { label: "Multiple injuries/surgeries still affecting daily life", scores: { physical: 3 } }
+      ]
+    },
+    {
+      text: "How do you feel after basic physical activity (walking, stairs, light movement)?",
+      options: [
+        { label: "Energized and fine", scores: { physical: 0 } },
+        { label: "A little sore or winded", scores: { physical: 1 } },
+        { label: "Quite fatigued or very sore", scores: { physical: 2 } },
+        { label: "Exhausted or in pain from very little", scores: { physical: 3 } }
+      ]
+    },
+    {
+      text: "How often do you use painkillers, muscle relaxers, or sleep meds to manage your body?",
+      options: [
+        { label: "Almost never", scores: { physical: 0 } },
+        { label: "Occasionally", scores: { physical: 1 } },
+        { label: "Frequently", scores: { physical: 2 } },
+        { label: "Depend on them regularly", scores: { physical: 3 } }
+      ]
+    },
+
+    // EMOTIONAL TRAUMA / STRESS-LEANING
+    {
+      text: "How often do you feel like your body is stuck in 'fight, flight, or freeze'?",
+      options: [
+        { label: "Rarely", scores: { emotional: 0 } },
+        { label: "Sometimes", scores: { emotional: 1 } },
+        { label: "Most days", scores: { emotional: 2 } },
+        { label: "Almost all the time", scores: { emotional: 3 } }
+      ]
+    },
+    {
+      text: "How easily can you relax and truly feel safe in your body?",
+      options: [
+        { label: "Very easily", scores: { emotional: 0 } },
+        { label: "Takes a little effort", scores: { emotional: 1 } },
+        { label: "Difficult most of the time", scores: { emotional: 2 } },
+        { label: "Almost never feel fully safe", scores: { emotional: 3 } }
+      ]
+    },
+    {
+      text: "How much do old memories, conflicts, or relationships still feel 'alive' in your nervous system?",
+      options: [
+        { label: "Barely at all", scores: { emotional: 0 } },
+        { label: "Sometimes", scores: { emotional: 1 } },
+        { label: "Quite a lot", scores: { emotional: 2 } },
+        { label: "They dominate my inner world", scores: { emotional: 3 } }
+      ]
+    },
+    {
+      text: "When stress spikes, what happens first in your body?",
+      options: [
+        { label: "I notice but recover quickly", scores: { emotional: 0 } },
+        { label: "I get tight or wired for a bit", scores: { emotional: 1 } },
+        { label: "Sleep, digestion, or mood quickly unravel", scores: { emotional: 2 } },
+        { label: "I shut down, explode, or spin for days", scores: { emotional: 3 } }
+      ]
+    }
+  ];
+
+  const answers = new Array(questions.length).fill(null);
+
+  const questionContainer = document.getElementById("question-container");
+  const progressEl = document.getElementById("quiz-progress");
+  const backBtn = document.getElementById("back-btn");
+  const nextBtn = document.getElementById("next-btn");
+  const resultBox = document.getElementById("quiz-result");
+  const resultTitle = document.getElementById("result-title");
+  const resultBody = document.getElementById("result-body");
+  const ctaWrapper = document.getElementById("quiz-cta");
+  const ctaTitle = document.getElementById("cta-title");
+  const ctaBody = document.getElementById("cta-body");
+  const ctaButtons = document.getElementById("cta-buttons");
+
+  let currentIndex = 0;
+
+  function updateProgress() {
+    if (!progressEl) return;
+    const total = questions.length;
+    progressEl.textContent = `Question ${currentIndex + 1} of ${total}`;
   }
 
-  // FADE-IN SECTIONS WHEN VISIBLE
-  const fadeSections = document.querySelectorAll('.fade-section');
+  function renderQuestion() {
+    if (!questionContainer) return;
 
-  const fadeObserver = new IntersectionObserver((entries, observer) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        entry.target.classList.add('visible');
-        observer.unobserve(entry.target); // only animate once
+    const q = questions[currentIndex];
+    if (!q) return;
+
+    let html = `<div class="quiz-question">
+      <p>${q.text}</p>`;
+
+    q.options.forEach((opt, idx) => {
+      const checked = answers[currentIndex] === idx ? "checked" : "";
+      html += `
+        <label class="quiz-option">
+          <input type="radio" name="q${currentIndex}" value="${idx}" ${checked} />
+          ${opt.label}
+        </label>`;
+    });
+
+    html += `</div>`;
+    questionContainer.innerHTML = html;
+
+    // Back button visibility
+    if (backBtn) {
+      backBtn.style.visibility = currentIndex === 0 ? "hidden" : "visible";
+    }
+
+    // Next button label
+    if (nextBtn) {
+      nextBtn.textContent =
+        currentIndex === questions.length - 1 ? "See My Results" : "Next";
+    }
+
+    updateProgress();
+    resultBox?.classList.add("hidden");
+    ctaWrapper?.classList.add("hidden");
+  }
+
+  function calculateScores() {
+    const totals = {
+      malnourishment: 0,
+      toxicity: 0,
+      physical: 0,
+      emotional: 0
+    };
+
+    questions.forEach((q, qIndex) => {
+      const selected = answers[qIndex];
+      if (selected === null || selected === undefined) return;
+
+      const opt = q.options[selected];
+      if (!opt || !opt.scores) return;
+
+      Object.entries(opt.scores).forEach(([key, value]) => {
+        totals[key] = (totals[key] || 0) + value;
+      });
+    });
+
+    return totals;
+  }
+
+  function getDominantCategory(totals) {
+    let bestKey = null;
+    let bestScore = -Infinity;
+    Object.entries(totals).forEach(([key, score]) => {
+      if (score > bestScore) {
+        bestScore = score;
+        bestKey = key;
       }
     });
-  }, { threshold: 0.22 });
+    return bestKey;
+  }
 
-  fadeSections.forEach(sec => fadeObserver.observe(sec));
+  function showResult() {
+    const totals = calculateScores();
+    const dominant = getDominantCategory(totals);
+
+    if (!resultBox || !resultTitle || !resultBody) return;
+
+    // Hide question area + nav
+    if (questionContainer) {
+      questionContainer.innerHTML = "";
+    }
+    if (document.querySelector(".quiz-nav")) {
+      document.querySelector(".quiz-nav").classList.add("hidden");
+    }
+    if (progressEl) {
+      progressEl.textContent = "Your Results";
+    }
+
+    let titleText = "";
+    let bodyText = "";
+
+    if (dominant === "malnourishment") {
+      titleText = "Your Nutrient Deficiencies Are Driving Your Stress";
+      bodyText =
+        "Your answers suggest that core nutrients—especially minerals like sodium, potassium, magnesium, and whole-food fuels—are not keeping up with your daily demands. This can lock you into a stress loop: the more depleted you are, the more your body has to fight just to keep up. Your priority is rebuilding deep nourishment so your system has enough raw material to calm, repair, and restore.";
+    } else if (dominant === "toxicity") {
+      titleText = "Your System Is Overloaded—Detox Needs to Come First";
+      bodyText =
+        "Your body is signaling that the total load of stressors and toxins is too high for your current capacity. Headaches, sensitivities, skin issues, and bowel changes all point to a system trying to keep up. Before pushing harder with more protocols, your priority is supporting drainage, elimination, and detox pathways so your cells can actually receive the nutrition and signals you give them.";
+    } else if (dominant === "physical") {
+      titleText = "Your Pain and Physical Load Are Hijacking Your Resources";
+      bodyText =
+        "Chronic pain, old injuries, and structural stress are spending a huge percentage of your mineral and nervous system budget just to cope. When pain dominates the system, it’s hard to build deep health. Your priority is reducing mechanical load and restoring more efficient movement patterns so your body can redirect energy from survival into repair.";
+    } else if (dominant === "emotional") {
+      titleText = "Your Nervous System and Emotional Load Are the Priority";
+      bodyText =
+        "Your body is telling a story of long-standing stress, unresolved emotional load, or early wiring that still shapes how safe you feel. When your nervous system doesn’t feel safe, digestion, hormones, and repair all take a back seat. Your priority is creating real safety—physically and emotionally—so your body can finally stand down from constant alert and begin to heal.";
+    } else {
+      titleText = "Your System Is Mixed—We’ll Help You Sequence the Priorities";
+      bodyText =
+        "Your answers don’t point to one single dominant priority, which often means several areas are under moderate strain. This is common—and it just means we’ll walk you through the right starting point so you’re not trying to fix everything at once.";
+    }
+
+    resultTitle.textContent = titleText;
+    resultBody.textContent = bodyText;
+    resultBox.classList.remove("hidden");
+
+    if (ctaWrapper && ctaTitle && ctaBody && ctaButtons) {
+      ctaButtons.innerHTML = "";
+      ctaWrapper.classList.remove("hidden");
+
+      if (dominant === "malnourishment") {
+        ctaTitle.textContent = "Start With Cellular Nourishment";
+        ctaBody.textContent =
+          "We’ll help you rebuild your mineral base and daily non-negotiables so your body can step out of survival mode.";
+        ctaButtons.innerHTML = `
+          <a class="btn btn-primary btn-small" href="#cta-final">Get a Nutrient-Focused Plan</a>
+          <a class="btn btn-secondary btn-small" href="#paths">Learn How We Prioritize</a>
+        `;
+      } else if (dominant === "toxicity") {
+        ctaTitle.textContent = "Start With Detox & Drainage Support";
+        ctaBody.textContent =
+          "We’ll map out gentle but effective ways to lower your body’s total load so nutrition and rest actually land.";
+        ctaButtons.innerHTML = `
+          <a class="btn btn-primary btn-small" href="#cta-final">Support My Detox Pathways</a>
+          <a class="btn btn-secondary btn-small" href="#paths">See Your Next Options</a>
+        `;
+      } else if (dominant === "physical") {
+        ctaTitle.textContent = "Start With Pain & Structural Load";
+        ctaBody.textContent =
+          "We’ll help you reduce mechanical stress and reclaim movement patterns so your body has margin again.";
+        ctaButtons.innerHTML = `
+          <a class="btn btn-primary btn-small" href="#cta-final">Talk About Pain & Movement</a>
+          <a class="btn btn-secondary btn-small" href="#paths">See Both Paths</a>
+        `;
+      } else if (dominant === "emotional") {
+        ctaTitle.textContent = "Start With Safety and Nervous System Repair";
+        ctaBody.textContent =
+          "We’ll help you connect how early experiences, current relationships, and daily stress live in your body—and what to do next.";
+        ctaButtons.innerHTML = `
+          <a class="btn btn-primary btn-small" href="#cta-final">Get Support With Stress</a>
+          <a class="btn btn-secondary btn-small" href="#paths">Explore the Two Paths</a>
+        `;
+      } else {
+        ctaTitle.textContent = "Let’s Build Your Sequence Together";
+        ctaBody.textContent =
+          "Because your load is spread across several areas, we’ll help you choose a starting point that fits your reality and capacity.";
+        ctaButtons.innerHTML = `
+          <a class="btn btn-primary btn-small" href="#cta-final">Get a Custom Starting Plan</a>
+          <a class="btn btn-secondary btn-small" href="#paths">Review Your Options</a>
+        `;
+      }
+    }
+  }
+
+  function nextQuestion() {
+    const selected = document.querySelector(
+      `input[name="q${currentIndex}"]:checked`
+    );
+    if (!selected) {
+      // Simple guard: require an answer
+      alert("Please choose an option to continue.");
+      return;
+    }
+
+    answers[currentIndex] = parseInt(selected.value, 10);
+
+    if (currentIndex < questions.length - 1) {
+      currentIndex++;
+      renderQuestion();
+    } else {
+      showResult();
+    }
+  }
+
+  function prevQuestion() {
+    if (currentIndex === 0) return;
+    currentIndex--;
+    renderQuestion();
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener("click", nextQuestion);
+  }
+
+  if (backBtn) {
+    backBtn.addEventListener("click", prevQuestion);
+  }
+
+  // Initial render
+  if (questionContainer) {
+    renderQuestion();
+  }
+
+  // ---------------------------
+  // CTA EMAIL FORM HANDLER
+  // ---------------------------
+  (function () {
+    const ctaForm = document.getElementById("cta-form");
+    const successMsg = document.getElementById("cta-form-success");
+
+    if (!ctaForm) return;
+
+    ctaForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      // This is just front-end behavior; hook this up to your email/Practice Better later.
+      ctaForm.classList.add("hidden");
+      if (successMsg) {
+        successMsg.classList.remove("hidden");
+      }
+    });
+  })();
 </script>
 </body>
 </html>
