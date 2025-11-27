@@ -729,6 +729,17 @@
     opacity: 1;
     transform: translateY(0);
   }
+  /* FADE-IN ANIMATIONS */
+.fade-section {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity 0.6s ease, transform 0.6s ease;
+}
+
+.fade-section.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
 </style>
 
 </head>
@@ -753,11 +764,15 @@
     </div>
 
     <div class="nav-links">
-      <a href="#how-we-help">How We Help</a>
-      <a href="#paths">Start</a>
-      <a href="#prioritization">Why This Quiz</a>
-      <a href="#quiz" class="btn btn-primary btn-small">Take Quiz</a>
-    </div>
+  <a href="#how-we-help">How We Help</a>
+  <a href="#paths">Start</a>
+  <a href="#prioritization">Why This Quiz</a>
+  <a href="#quiz" class="btn btn-primary btn-small">Take Quiz</a>
+  <button type="button" class="theme-toggle" id="theme-toggle">
+    ☾ Dark
+  </button>
+</div>
+
   </div>
 </nav>
 
@@ -765,7 +780,7 @@
 <div class="page">
 
   <!-- HERO WITH STATS -->
-  <section class="hero" id="top">
+ <section class="hero fade-section" id="top">
     <div class="hero-wrapper">
       
       <!-- LEFT STATS COLUMN -->
@@ -836,7 +851,7 @@
   </section>
 
   <!-- HEALTHY PEOPLE ARE A THREAT -->
-  <section id="threat">
+ <section id="threat" class="fade-section">
     <div class="section-heading">
       <h2>Healthy People Are Not Profitable to the System</h2>
     </div>
@@ -852,7 +867,7 @@
   </section>
 
   <!-- HOW WE HELP -->
-  <section id="how-we-help">
+  <section id="how-we-help" class="fade-section">
     <div class="section-heading">
       <h4>What We Actually Do</h4>
       <h2>Here's How We'll Help You Get There</h2>
@@ -892,7 +907,7 @@
   </section>
 
   <!-- PRIORITIZATION BLOCK -->
-  <section id="prioritization">
+ <section id="prioritization" class="fade-section">
     <div class="section-heading">
       <h2>Why Prioritization Matters More Than More Testing</h2>
     </div>
@@ -925,7 +940,7 @@
   </section>
 
   <!-- QUIZ SECTION -->
-  <section id="quiz">
+  <section id="quiz" class="fade-section">
     <div id="quiz-card">
       <h3>Find Your Starting Point</h3>
       <p class="quiz-intro">
@@ -957,7 +972,7 @@
   </section>
 
   <!-- TWO PATHS -->
-  <section id="paths">
+  <section id="paths" class="fade-section">
     <div class="section-heading">
       <h2>Two Ways to Begin</h2>
     </div>
@@ -1011,20 +1026,49 @@
   </section>
 
   <!-- FINAL CTA -->
-  <section id="cta-final">
-    <div class="callout">
-      <h2>Ready to End the Madness?</h2>
-      <p>You've tried everything. Diets, supplements, practitioners.</p>
-      <p>What if the problem was never you?</p>
+ <section id="cta-final" class="fade-section">
+  <div class="callout">
+    <h2>Ready to End the Madness?</h2>
+    <p>You've tried everything. Diets, supplements, practitioners.</p>
+    <p>What if the problem was never you?</p>
 
-      <p class="callout-strong">Our mission is to do our job so well you won’t need us anymore—and your life becomes proof that we can take our health back.</p>
+    <p class="callout-strong">
+      Our mission is to do our job so well you won’t need us anymore—and your life becomes proof that we can take our health back.
+    </p>
 
-      <div class="btn-row center">
-        <a class="btn btn-primary" href="#quiz">Take the Quiz</a>
-        <a class="btn btn-secondary" href="#testing">Explore Testing</a>
-      </div>
+    <div class="btn-row center">
+      <a class="btn btn-primary" href="#quiz">Take the Quiz</a>
+      <a class="btn btn-secondary" href="#testing">Explore Testing</a>
     </div>
-  </section>
+
+    <!-- EMAIL CAPTURE / PRACTICE BETTER HOOK -->
+    <form class="cta-form" id="cta-form">
+      <div class="cta-form-label">
+        Enter your email and we’ll send you next steps and a link to your Practice Better portal.
+      </div>
+      <div class="cta-form-row">
+        <input
+          type="email"
+          id="cta-email"
+          name="email"
+          placeholder="you@example.com"
+          required
+        />
+        <button type="submit" class="btn btn-primary">
+          Get My Starting Plan
+        </button>
+      </div>
+      <p class="cta-form-note">
+        No spam. Just a clear first step and an invitation into the Regen Health system.
+      </p>
+    </form>
+
+    <p id="cta-form-success" class="cta-form-success hidden">
+      Thank you. Check your email for next steps and a link to create or log into your Practice Better portal.
+    </p>
+  </div>
+</section>
+
 
   <footer>
     © <span id="year"></span> Regen Health Institute · Own your health. End the madness.
@@ -1033,291 +1077,48 @@
 </div>
 
 
-  <script>
- // Footer year
-document.getElementById("year").textContent = new Date().getFullYear();
+<section id="cta-final" class="fade-section">
+  <div class="callout">
+    <h2>Ready to End the Madness?</h2>
+    <p>You've tried everything. Diets, supplements, practitioners.</p>
+    <p>What if the problem was never you?</p>
 
-// Animated counter function
-function animateCounter(element) {
-  const target = parseInt(element.getAttribute('data-target'));
-  const duration = 2000;
-  const step = target / (duration / 16);
-  let current = 0;
+    <p class="callout-strong">
+      Our mission is to do our job so well you won’t need us anymore—and your life becomes proof that we can take our health back.
+    </p>
 
-  const timer = setInterval(() => {
-    current += step;
-    if (current >= target) {
-      element.textContent = target;
-      clearInterval(timer);
-    } else {
-      element.textContent = Math.floor(current);
-    }
-  }, 16);
-}
-
-// Start counters on load
-window.addEventListener('load', () => {
-  const counters = document.querySelectorAll('.counter');
-  counters.forEach(counter => animateCounter(counter));
-});
-
-/* ========= QUIZ DATA ========= */
-const questions = [
-  // Malnourishment (1–7)
-  { id: 1, block: 'malnourishment', text: 'Do you feel tired even after sleeping a full night?' },
-  { id: 2, block: 'malnourishment', text: 'Do you experience energy crashes mid-morning or mid-afternoon?' },
-  { id: 3, block: 'malnourishment', text: 'Do you feel worse when you get stressed, even if it’s a small stressor?' },
-  { id: 4, block: 'malnourishment', text: 'Do you crave salt, sugar, or stimulants to get through the day?' },
-  { id: 5, block: 'malnourishment', text: 'Do you feel lightheaded, shaky, or irritable when hungry?' },
-  { id: 6, block: 'malnourishment', text: 'Do you struggle to stay hydrated, or feel like water “goes right through you”?' },
-  { id: 7, block: 'malnourishment', text: 'Do you feel physically depleted by even small tasks or workouts?' },
-
-  // Toxicity (8–14)
-  { id: 8, block: 'toxicity', text: 'Do you get headaches, migraines, or pressure behind the eyes?' },
-  { id: 9, block: 'toxicity', text: 'Do strong smells (cleaners, perfume, fragrances) bother you?' },
-  { id: 10, block: 'toxicity', text: 'Do you feel worse in certain environments (home, office, car, old buildings)?' },
-  { id: 11, block: 'toxicity', text: 'Do you struggle with constipation, loose stools, or an unpredictable digestive system?' },
-  { id: 12, block: 'toxicity', text: 'Do you often feel puffy, swollen, or inflamed?' },
-  { id: 13, block: 'toxicity', text: 'Do you experience skin issues (rashes, acne, itching) that come and go?' },
-  { id: 14, block: 'toxicity', text: 'Do you wake up feeling toxic — groggy, heavy, or foggy — even without drinking alcohol?' },
-
-  // Physical Trauma (15–21)
-  { id: 15, block: 'physical', text: 'Do you experience chronic pain or discomfort (back, neck, joints, muscles)?' },
-  { id: 16, block: 'physical', text: 'Do you feel physically tense most of the time, even at rest?' },
-  { id: 17, block: 'physical', text: 'Does your pain get worse with stress or emotional tension?' },
-  { id: 18, block: 'physical', text: 'Do you feel like your posture or breathing has changed over time?' },
-  { id: 19, block: 'physical', text: 'Do you get injured easily or feel sore longer than you should after activity?' },
-  { id: 20, block: 'physical', text: 'Do you have trouble relaxing your body without effort?' },
-  { id: 21, block: 'physical', text: 'Does physical discomfort limit your daily activities or focus?' },
-
-  // Emotional Trauma (22–28)
-  { id: 22, block: 'emotional', text: 'Do you feel overwhelmed easily, even by small things?' },
-  { id: 23, block: 'emotional', text: 'Do you carry tension in your chest, stomach, or throat when stressed?' },
-  { id: 24, block: 'emotional', text: 'Do you have difficulty feeling safe or settled in your body?' },
-  { id: 25, block: 'emotional', text: 'Do you struggle with repeating emotional patterns or relationship stress?' },
-  { id: 26, block: 'emotional', text: 'Did you experience significant stress or instability before age 7?' },
-  { id: 27, block: 'emotional', text: 'Do you often feel disconnected, numb, or shut down when overwhelmed?' },
-  { id: 28, block: 'emotional', text: 'Do you have trouble switching off your thoughts, even when you want to relax?' },
-];
-
-const resultContent = {
-  malnourishment: {
-    title: 'Your nutrient deficiencies are driving your stress.',
-    body: 'Being low in key nutrients like potassium and magnesium can keep you locked in a stress loop, even when your life feels “manageable.” Your cells simply don’t have enough fuel or minerals to regulate your nervous system, hormones, and energy. Right now, the priority is restoring nourishment in the correct order—breathing, hydration with minerals, and stabilizing sodium and potassium so your body can finally come out of survival mode.'
-  },
-  toxicity: {
-    title: 'Your toxic load is overwhelming your body’s ability to heal.',
-    body: 'The load of toxins in your system is high enough that your body is prioritizing survival over repair. When that happens, nutrients can’t get where they need to go, and your symptoms become a warning light, not a failure. Right now, the priority is supporting your detoxification pathways first—reducing what’s coming in and opening the exits, so your cells can start catching up again.'
-  },
-  physical: {
-    title: 'Your physical pain is consuming your energy and nutrients.',
-    body: 'Your physical pain is so high that your body is burning through minerals and resources just to cope. Pain keeps your nervous system in a constant state of alert, which blocks deep recovery, sleep quality, and nutrient absorption. Right now, the priority is reducing the physical stress on your system—restoring breathing, position, and key nutritional elements that can dramatically reduce pain and free up energy for healing.'
-  },
-  emotional: {
-    title: 'Your stress load is so high your body can’t keep up nutritionally.',
-    body: 'Emotional trauma—especially under age 7—wires us differently. Until we start to gently rewire those patterns, we tend to recreate the same emotional stress over and over. That constant survival mode blocks nutrient delivery, mineral balance, and deep healing. Right now, the priority is reducing the stress load on your system—creating safety in your nervous system so your body can finally use the nutrition and support you give it.'
-  }
-};
-
-const ctaContent = {
-  malnourishment: {
-    title: 'Your Best Next Step',
-    body: 'Because your primary issue is nourishment and mineral balance, you’ll get the most traction by pairing focused education with targeted testing. We recommend starting with our mineral-focused testing options so you can see exactly how your sodium, potassium, calcium, and magnesium are behaving—and what to do about it.',
-    buttons: [
-      { label: 'Explore Testing Options', href: '#testing', primary: true },
-      { label: 'Review Both Starting Paths', href: '#paths', primary: false }
-    ]
-  },
-  toxicity: {
-    title: 'Your Best Next Step',
-    body: 'Your results suggest that toxic load and detox capacity are major drivers of how you feel. Before adding more supplements or protocols, it’s critical to see what your body is actually carrying. Testing plus education on how to lower your daily toxic burden will give you the most leverage.',
-    buttons: [
-      { label: 'Talk About Detox & Testing', href: '#testing', primary: true },
-      { label: 'Learn How We Prioritize Detox', href: '#prioritization', primary: false }
-    ]
-  },
-  physical: {
-    title: 'Your Best Next Step',
-    body: 'Because physical pain and structural stress are taking so much of your energy, the most effective starting point is education and gentle, nervous-system-friendly changes. Understanding how breathing, position, and minerals interact with pain will give you real traction before you add more complexity.',
-    buttons: [
-      { label: 'Start With Education', href: '#paths', primary: true },
-      { label: 'Retake or Share Your Results', href: '#quiz', primary: false }
-    ]
-  },
-  emotional: {
-    title: 'Your Best Next Step',
-    body: 'Your results show that emotional load and nervous system stress are leading the way. The most important move you can make is to learn how stress physiology, minerals, and early wiring interact—then build safety into your system on purpose.',
-    buttons: [
-      { label: 'Start With Education', href: '#paths', primary: true },
-      { label: 'Explore Our Philosophy', href: '#prioritization', primary: false }
-    ]
-  }
-};
-
-let currentIndex = 0;
-const answers = {};
-
-const questionContainer = document.getElementById('question-container');
-const progressEl = document.getElementById('quiz-progress');
-const backBtn = document.getElementById('back-btn');
-const nextBtn = document.getElementById('next-btn');
-const navEl = document.querySelector('.quiz-nav');
-const resultBox = document.getElementById('quiz-result');
-const resultTitle = document.getElementById('result-title');
-const resultBody = document.getElementById('result-body');
-const ctaBox = document.getElementById('quiz-cta');
-const ctaTitle = document.getElementById('cta-title');
-const ctaBody = document.getElementById('cta-body');
-const ctaButtons = document.getElementById('cta-buttons');
-
-function renderQuestion() {
-  const q = questions[currentIndex];
-  const total = questions.length;
-
-  progressEl.textContent = `Question ${currentIndex + 1} of ${total}`;
-
-  const savedValue = answers[q.id] !== undefined ? String(answers[q.id]) : null;
-
-  questionContainer.innerHTML = `
-    <div class="quiz-question">
-      <p><strong>Q${q.id}.</strong> ${q.text}</p>
-      <label class="quiz-option">
-        <input type="radio" name="q${q.id}" value="0" ${savedValue === '0' ? 'checked' : ''}>
-        Never / Not true
-      </label>
-      <label class="quiz-option">
-        <input type="radio" name="q${q.id}" value="1" ${savedValue === '1' ? 'checked' : ''}>
-        Occasionally
-      </label>
-      <label class="quiz-option">
-        <input type="radio" name="q${q.id}" value="2" ${savedValue === '2' ? 'checked' : ''}>
-        Often
-      </label>
-      <label class="quiz-option">
-        <input type="radio" name="q${q.id}" value="3" ${savedValue === '3' ? 'checked' : ''}>
-        Almost always
-      </label>
+    <div class="btn-row center">
+      <a class="btn btn-primary" href="#quiz">Take the Quiz</a>
+      <a class="btn btn-secondary" href="#testing">Explore Testing</a>
     </div>
-  `;
 
-  document.getElementById('quiz-card').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    <!-- EMAIL CAPTURE / PRACTICE BETTER HOOK -->
+    <form class="cta-form" id="cta-form">
+      <div class="cta-form-label">
+        Enter your email and we’ll send you next steps and a link to your Practice Better portal.
+      </div>
+      <div class="cta-form-row">
+        <input
+          type="email"
+          id="cta-email"
+          name="email"
+          placeholder="you@example.com"
+          required
+        />
+        <button type="submit" class="btn btn-primary">
+          Get My Starting Plan
+        </button>
+      </div>
+      <p class="cta-form-note">
+        No spam. Just a clear first step and an invitation into the Regen Health system.
+      </p>
+    </form>
 
-  if (currentIndex === 0) backBtn.style.visibility = 'hidden';
-  else backBtn.style.visibility = 'visible';
+    <p id="cta-form-success" class="cta-form-success hidden">
+      Thank you. Check your email for next steps and a link to create or log into your Practice Better portal.
+    </p>
+  </div>
+</section>
 
-  if (currentIndex === total - 1) nextBtn.textContent = 'See My Results';
-  else nextBtn.textContent = 'Next';
-
-  resultBox.classList.add('hidden');
-  ctaBox.classList.add('hidden');
-}
-
-function collectCurrentAnswer() {
-  const q = questions[currentIndex];
-  const selected = document.querySelector(`input[name="q${q.id}"]:checked`);
-  if (!selected) {
-    alert('Please select an answer to continue.');
-    return null;
-  }
-  answers[q.id] = parseInt(selected.value, 10);
-  return answers[q.id];
-}
-
-function calculateAndShowResult() {
-  const scores = {
-    malnourishment: 0,
-    toxicity: 0,
-    physical: 0,
-    emotional: 0
-  };
-
-  questions.forEach(q => {
-    const val = answers[q.id];
-    if (typeof val === 'number') scores[q.block] += val;
-  });
-
-  const blocks = ['malnourishment', 'toxicity', 'physical', 'emotional'];
-
-  let highestBlock = null;
-  let highestScore = -1;
-  blocks.forEach(b => {
-    if (scores[b] > highestScore) {
-      highestScore = scores[b];
-      highestBlock = b;
-    }
-  });
-
-  const malScore = scores.malnourishment;
-  const othersMax = Math.max(scores.toxicity, scores.physical, scores.emotional);
-  let primaryBlock = highestBlock;
-
-  if (malScore >= othersMax + 4) {
-    primaryBlock = 'malnourishment';
-  } else {
-    const topBlocks = blocks.filter(b => scores[b] === highestScore);
-    if (topBlocks.length > 1) {
-      const hierarchy = ['emotional', 'physical', 'toxicity', 'malnourishment'];
-      for (const h of hierarchy) {
-        if (topBlocks.includes(h)) {
-          primaryBlock = h;
-          break;
-        }
-      }
-    } else {
-      primaryBlock = highestBlock;
-    }
-  }
-
-  const result = resultContent[primaryBlock];
-  const cta = ctaContent[primaryBlock];
-
-  // Hide question and nav; show result + CTA
-  questionContainer.innerHTML = '';
-  navEl.classList.add('hidden');
-  progressEl.textContent = '';
-
-  resultTitle.textContent = result.title;
-  resultBody.textContent = result.body;
-  resultBox.classList.remove('hidden');
-
-  ctaTitle.textContent = cta.title;
-  ctaBody.textContent = cta.body;
-  ctaButtons.innerHTML = '';
-  cta.buttons.forEach(btn => {
-    const a = document.createElement('a');
-    a.href = btn.href;
-    a.className = 'btn ' + (btn.primary ? 'btn-primary' : 'btn-secondary');
-    a.textContent = btn.label;
-    ctaButtons.appendChild(a);
-  });
-  ctaBox.classList.remove('hidden');
-
-  ctaBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-}
-
-// Event listeners
-nextBtn.addEventListener('click', () => {
-  const val = collectCurrentAnswer();
-  if (val === null) return;
-
-  if (currentIndex < questions.length - 1) {
-    currentIndex++;
-    renderQuestion();
-  } else {
-    calculateAndShowResult();
-  }
-});
-
-backBtn.addEventListener('click', () => {
-  if (currentIndex > 0) {
-    currentIndex--;
-    renderQuestion();
-  }
-});
-
-// Initial render
-renderQuestion();
-
-  </script>
 </body>
 </html>
