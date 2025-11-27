@@ -729,17 +729,6 @@
     opacity: 1;
     transform: translateY(0);
   }
-  /* FADE-IN ANIMATIONS */
-.fade-section {
-  opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.6s ease, transform 0.6s ease;
-}
-
-.fade-section.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
 </style>
 
 </head>
@@ -1075,50 +1064,26 @@
   </footer>
 
 </div>
+<script>
+  // Set footer year
+  const yearEl = document.getElementById("year");
+  if (yearEl) {
+    yearEl.textContent = new Date().getFullYear();
+  }
 
+  // FADE-IN SECTIONS WHEN VISIBLE
+  const fadeSections = document.querySelectorAll('.fade-section');
 
-<section id="cta-final" class="fade-section">
-  <div class="callout">
-    <h2>Ready to End the Madness?</h2>
-    <p>You've tried everything. Diets, supplements, practitioners.</p>
-    <p>What if the problem was never you?</p>
+  const fadeObserver = new IntersectionObserver((entries, observer) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('visible');
+        observer.unobserve(entry.target); // only animate once
+      }
+    });
+  }, { threshold: 0.22 });
 
-    <p class="callout-strong">
-      Our mission is to do our job so well you won’t need us anymore—and your life becomes proof that we can take our health back.
-    </p>
-
-    <div class="btn-row center">
-      <a class="btn btn-primary" href="#quiz">Take the Quiz</a>
-      <a class="btn btn-secondary" href="#testing">Explore Testing</a>
-    </div>
-
-    <!-- EMAIL CAPTURE / PRACTICE BETTER HOOK -->
-    <form class="cta-form" id="cta-form">
-      <div class="cta-form-label">
-        Enter your email and we’ll send you next steps and a link to your Practice Better portal.
-      </div>
-      <div class="cta-form-row">
-        <input
-          type="email"
-          id="cta-email"
-          name="email"
-          placeholder="you@example.com"
-          required
-        />
-        <button type="submit" class="btn btn-primary">
-          Get My Starting Plan
-        </button>
-      </div>
-      <p class="cta-form-note">
-        No spam. Just a clear first step and an invitation into the Regen Health system.
-      </p>
-    </form>
-
-    <p id="cta-form-success" class="cta-form-success hidden">
-      Thank you. Check your email for next steps and a link to create or log into your Practice Better portal.
-    </p>
-  </div>
-</section>
-
+  fadeSections.forEach(sec => fadeObserver.observe(sec));
+</script>
 </body>
 </html>
