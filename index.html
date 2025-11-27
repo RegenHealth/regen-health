@@ -73,10 +73,18 @@
     transition: background 0.3s ease, border-color 0.3s ease;
   }
 
-  body.light-theme .nav {
-    background: rgba(247, 250, 252, 0.9);
-    border-bottom: 1px solid rgba(0,0,0,0.06);
-  }
+ /* Keep nav dark even in light mode */
+body.light-theme .nav {
+  background: rgba(9, 14, 11, 0.9);
+  border-bottom: 1px solid rgba(255,255,255,0.05);
+}
+  body.light-theme .nav-links a {
+  color: #e2e8f0;
+}
+
+body.light-theme .nav-links a:hover {
+  color: var(--accent);
+}
 
   .nav-inner {
     max-width: 1120px;
