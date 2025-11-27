@@ -191,29 +191,18 @@
     gap: 1.5rem;
   }
 
-  .stat-item {
+   .stat-item {
     background: rgba(246, 173, 85, 0.08);
     border: 1px solid rgba(246, 173, 85, 0.3);
     border-radius: 12px;
     padding: 1rem 1.25rem;
     backdrop-filter: blur(10px);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-    animation: statPulse 3s ease-in-out infinite;
+    /* animation removed to avoid blur/pulse */
   }
 
   body.light-theme .stat-item {
     box-shadow: 0 4px 14px rgba(0,0,0,0.12);
-  }
-
-  @keyframes statPulse {
-    0%, 100% {
-      transform: scale(1);
-      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-    }
-    50% {
-      transform: scale(1.03);
-      box-shadow: 0 6px 20px rgba(246, 173, 85, 0.4);
-    }
   }
 
   .stat-label {
@@ -1069,7 +1058,7 @@
   // YEAR IN FOOTER
   // ---------------------------
   (function () {
-    const yearEl = document.getElementById("year");
+    var yearEl = document.getElementById("year");
     if (yearEl) {
       yearEl.textContent = new Date().getFullYear();
     }
@@ -1079,25 +1068,25 @@
   // THEME TOGGLE (DARK / LIGHT)
   // ---------------------------
   (function () {
-    const toggle = document.getElementById("theme-toggle");
+    var toggle = document.getElementById("theme-toggle");
     if (!toggle) return;
 
     // Load saved theme or default to dark
-    const saved = localStorage.getItem("regen-theme");
+    var saved = localStorage.getItem("regen-theme");
     if (saved === "light") {
       document.body.classList.add("light-theme");
     }
 
     function updateLabel() {
-      const light = document.body.classList.contains("light-theme");
+      var light = document.body.classList.contains("light-theme");
       toggle.textContent = light ? "☾ Dark" : "☀ Light";
     }
 
     updateLabel();
 
-    toggle.addEventListener("click", () => {
+    toggle.addEventListener("click", function () {
       document.body.classList.toggle("light-theme");
-      const light = document.body.classList.contains("light-theme");
+      var light = document.body.classList.contains("light-theme");
       localStorage.setItem("regen-theme", light ? "light" : "dark");
       updateLabel();
     });
@@ -1107,18 +1096,20 @@
   // FADE-IN SECTIONS ON SCROLL
   // ---------------------------
   (function () {
-    const fadeSections = document.querySelectorAll(".fade-section");
+    var fadeSections = document.querySelectorAll(".fade-section");
     if (!fadeSections.length) return;
 
     // Fallback for older browsers
     if (!("IntersectionObserver" in window)) {
-      fadeSections.forEach(sec => sec.classList.add("visible"));
+      fadeSections.forEach(function (sec) {
+        sec.classList.add("visible");
+      });
       return;
     }
 
-    const fadeObserver = new IntersectionObserver(
-      (entries, observer) => {
-        entries.forEach(entry => {
+    var fadeObserver = new IntersectionObserver(
+      function (entries, observer) {
+        entries.forEach(function (entry) {
           if (entry.isIntersecting) {
             entry.target.classList.add("visible");
             observer.unobserve(entry.target); // animate once
@@ -1128,7 +1119,67 @@
       { threshold: 0.22 }
     );
 
-    fadeSections.forEach(sec => fadeObserver.observe(sec));
+    fadeSections.forEach(function (sec) {
+      fadeObserver.observe(sec);
+    });
+  })();
+
+  // ---------------------------
+  // STAT COUNTERS
+  // ---------------------------
+  (function () {
+    var counters = document.querySelectorAll(".counter");
+    if (!counters.length) return;
+
+    function animateCounter(el) {
+      var target = parseFloat(el.getAttribute("data-target"));
+      if (isNaN(target)) return;
+
+      var duration = 1600; // ms
+      var startTime = null;
+      var isInteger = Number.isInteger ? Number.isInteger(target) : target % 1 === 0;
+
+      function step(timestamp) {
+        if (!startTime) startTime = timestamp;
+        var progress = Math.min((timestamp - startTime) / duration, 1);
+        var value = target * progress;
+
+        el.textContent = isInteger ? Math.round(value) : value.toFixed(1);
+
+        if (progress < 1) {
+          window.requestAnimationFrame(step);
+        }
+      }
+
+      window.requestAnimationFrame(step);
+    }
+
+    // Use IntersectionObserver so they animate when the hero appears
+    if ("IntersectionObserver" in window) {
+      var hero = document.querySelector(".hero");
+      if (!hero) {
+        // fallback: just animate immediately
+        counters.forEach(animateCounter);
+        return;
+      }
+
+      var heroObserver = new IntersectionObserver(
+        function (entries, observer) {
+          entries.forEach(function (entry) {
+            if (entry.isIntersecting) {
+              counters.forEach(animateCounter);
+              observer.unobserve(entry.target);
+            }
+          });
+        },
+        { threshold: 0.4 }
+      );
+
+      heroObserver.observe(hero);
+    } else {
+      // very old browsers: animate immediately
+      counters.forEach(animateCounter);
+    }
   })();
 
   // ---------------------------
@@ -1136,10 +1187,11 @@
   // ---------------------------
 
   // 4 categories: malnourishment, toxicity, physical, emotional
-  const questions = [
+  var questions = [
     // MALNOURISHMENT-LEANING
     {
-      text: "How often do you feel a mid-day energy crash that you 'fix' with caffeine or sugar?",
+      text:
+        "How often do you feel a mid-day energy crash that you 'fix' with caffeine or sugar?",
       options: [
         { label: "Rarely or never", scores: { malnourishment: 0 } },
         { label: "1–2 days per week", scores: { malnourishment: 1 } },
@@ -1148,7 +1200,8 @@
       ]
     },
     {
-      text: "How steady is your blood sugar (energy, mood, focus) between meals?",
+      text:
+        "How steady is your blood sugar (energy, mood, focus) between meals?",
       options: [
         { label: "Very steady", scores: { malnourishment: 0 } },
         { label: "Sometimes wobbly", scores: { malnourishment: 1 } },
@@ -1166,7 +1219,8 @@
       ]
     },
     {
-      text: "How much real, mineral-rich food (meats, eggs, roots, fruits) do you eat daily?",
+      text:
+        "How much real, mineral-rich food (meats, eggs, roots, fruits) do you eat daily?",
       options: [
         { label: "Most of my food is whole and real", scores: { malnourishment: 0 } },
         { label: "About half", scores: { malnourishment: 1 } },
@@ -1177,7 +1231,8 @@
 
     // TOXICITY-LEANING
     {
-      text: "How often do you experience headaches, brain fog, or 'hungover' feeling without alcohol?",
+      text:
+        "How often do you experience headaches, brain fog, or 'hungover' feeling without alcohol?",
       options: [
         { label: "Rarely or never", scores: { toxicity: 0 } },
         { label: "Sometimes", scores: { toxicity: 1 } },
@@ -1186,7 +1241,8 @@
       ]
     },
     {
-      text: "How sensitive are you to smells (perfumes, cleaners, exhaust, chemicals)?",
+      text:
+        "How sensitive are you to smells (perfumes, cleaners, exhaust, chemicals)?",
       options: [
         { label: "Not sensitive", scores: { toxicity: 0 } },
         { label: "Mildly sensitive", scores: { toxicity: 1 } },
@@ -1195,7 +1251,8 @@
       ]
     },
     {
-      text: "How often do you have skin reactions (rashes, hives, unexplained itching)?",
+      text:
+        "How often do you have skin reactions (rashes, hives, unexplained itching)?",
       options: [
         { label: "Rarely or never", scores: { toxicity: 0 } },
         { label: "Occasionally", scores: { toxicity: 1 } },
@@ -1215,7 +1272,8 @@
 
     // PHYSICAL TRAUMA / PAIN-LEANING
     {
-      text: "How often do you experience chronic pain or tension that doesn’t fully go away?",
+      text:
+        "How often do you experience chronic pain or tension that doesn’t fully go away?",
       options: [
         { label: "Rarely or never", scores: { physical: 0 } },
         { label: "1–2 days per week", scores: { physical: 1 } },
@@ -1224,7 +1282,8 @@
       ]
     },
     {
-      text: "Do you have an old injury or surgery that still changes how you move or live?",
+      text:
+        "Do you have an old injury or surgery that still changes how you move or live?",
       options: [
         { label: "No significant history", scores: { physical: 0 } },
         { label: "One mild thing, mostly healed", scores: { physical: 1 } },
@@ -1233,7 +1292,8 @@
       ]
     },
     {
-      text: "How do you feel after basic physical activity (walking, stairs, light movement)?",
+      text:
+        "How do you feel after basic physical activity (walking, stairs, light movement)?",
       options: [
         { label: "Energized and fine", scores: { physical: 0 } },
         { label: "A little sore or winded", scores: { physical: 1 } },
@@ -1242,7 +1302,8 @@
       ]
     },
     {
-      text: "How often do you use painkillers, muscle relaxers, or sleep meds to manage your body?",
+      text:
+        "How often do you use painkillers, muscle relaxers, or sleep meds to manage your body?",
       options: [
         { label: "Almost never", scores: { physical: 0 } },
         { label: "Occasionally", scores: { physical: 1 } },
@@ -1253,7 +1314,8 @@
 
     // EMOTIONAL TRAUMA / STRESS-LEANING
     {
-      text: "How often do you feel like your body is stuck in 'fight, flight, or freeze'?",
+      text:
+        "How often do you feel like your body is stuck in 'fight, flight, or freeze'?",
       options: [
         { label: "Rarely", scores: { emotional: 0 } },
         { label: "Sometimes", scores: { emotional: 1 } },
@@ -1271,7 +1333,8 @@
       ]
     },
     {
-      text: "How much do old memories, conflicts, or relationships still feel 'alive' in your nervous system?",
+      text:
+        "How much do old memories, conflicts, or relationships still feel 'alive' in your nervous system?",
       options: [
         { label: "Barely at all", scores: { emotional: 0 } },
         { label: "Sometimes", scores: { emotional: 1 } },
@@ -1290,47 +1353,52 @@
     }
   ];
 
-  const answers = new Array(questions.length).fill(null);
+  var answers = new Array(questions.length).fill(null);
 
-  const questionContainer = document.getElementById("question-container");
-  const progressEl = document.getElementById("quiz-progress");
-  const backBtn = document.getElementById("back-btn");
-  const nextBtn = document.getElementById("next-btn");
-  const resultBox = document.getElementById("quiz-result");
-  const resultTitle = document.getElementById("result-title");
-  const resultBody = document.getElementById("result-body");
-  const ctaWrapper = document.getElementById("quiz-cta");
-  const ctaTitle = document.getElementById("cta-title");
-  const ctaBody = document.getElementById("cta-body");
-  const ctaButtons = document.getElementById("cta-buttons");
+  var questionContainer = document.getElementById("question-container");
+  var progressEl = document.getElementById("quiz-progress");
+  var backBtn = document.getElementById("back-btn");
+  var nextBtn = document.getElementById("next-btn");
+  var resultBox = document.getElementById("quiz-result");
+  var resultTitle = document.getElementById("result-title");
+  var resultBody = document.getElementById("result-body");
+  var ctaWrapper = document.getElementById("quiz-cta");
+  var ctaTitle = document.getElementById("cta-title");
+  var ctaBody = document.getElementById("cta-body");
+  var ctaButtons = document.getElementById("cta-buttons");
 
-  let currentIndex = 0;
+  var currentIndex = 0;
 
   function updateProgress() {
     if (!progressEl) return;
-    const total = questions.length;
-    progressEl.textContent = `Question ${currentIndex + 1} of ${total}`;
+    var total = questions.length;
+    progressEl.textContent = "Question " + (currentIndex + 1) + " of " + total;
   }
 
   function renderQuestion() {
     if (!questionContainer) return;
 
-    const q = questions[currentIndex];
+    var q = questions[currentIndex];
     if (!q) return;
 
-    let html = `<div class="quiz-question">
-      <p>${q.text}</p>`;
+    var html = '<div class="quiz-question"><p>' + q.text + "</p>";
 
-    q.options.forEach((opt, idx) => {
-      const checked = answers[currentIndex] === idx ? "checked" : "";
-      html += `
-        <label class="quiz-option">
-          <input type="radio" name="q${currentIndex}" value="${idx}" ${checked} />
-          ${opt.label}
-        </label>`;
+    q.options.forEach(function (opt, idx) {
+      var checked = answers[currentIndex] === idx ? "checked" : "";
+      html +=
+        '<label class="quiz-option">' +
+        '<input type="radio" name="q' +
+        currentIndex +
+        '" value="' +
+        idx +
+        '" ' +
+        checked +
+        " />" +
+        opt.label +
+        "</label>";
     });
 
-    html += `</div>`;
+    html += "</div>";
     questionContainer.innerHTML = html;
 
     // Back button visibility
@@ -1344,27 +1412,29 @@
         currentIndex === questions.length - 1 ? "See My Results" : "Next";
     }
 
+    if (resultBox) resultBox.classList.add("hidden");
+    if (ctaWrapper) ctaWrapper.classList.add("hidden");
+
     updateProgress();
-    resultBox?.classList.add("hidden");
-    ctaWrapper?.classList.add("hidden");
   }
 
   function calculateScores() {
-    const totals = {
+    var totals = {
       malnourishment: 0,
       toxicity: 0,
       physical: 0,
       emotional: 0
     };
 
-    questions.forEach((q, qIndex) => {
-      const selected = answers[qIndex];
+    questions.forEach(function (q, qIndex) {
+      var selected = answers[qIndex];
       if (selected === null || selected === undefined) return;
 
-      const opt = q.options[selected];
+      var opt = q.options[selected];
       if (!opt || !opt.scores) return;
 
-      Object.entries(opt.scores).forEach(([key, value]) => {
+      Object.keys(opt.scores).forEach(function (key) {
+        var value = opt.scores[key];
         totals[key] = (totals[key] || 0) + value;
       });
     });
@@ -1373,20 +1443,23 @@
   }
 
   function getDominantCategory(totals) {
-    let bestKey = null;
-    let bestScore = -Infinity;
-    Object.entries(totals).forEach(([key, score]) => {
+    var bestKey = null;
+    var bestScore = -Infinity;
+
+    Object.keys(totals).forEach(function (key) {
+      var score = totals[key];
       if (score > bestScore) {
         bestScore = score;
         bestKey = key;
       }
     });
+
     return bestKey;
   }
 
   function showResult() {
-    const totals = calculateScores();
-    const dominant = getDominantCategory(totals);
+    var totals = calculateScores();
+    var dominant = getDominantCategory(totals);
 
     if (!resultBox || !resultTitle || !resultBody) return;
 
@@ -1394,15 +1467,18 @@
     if (questionContainer) {
       questionContainer.innerHTML = "";
     }
-    if (document.querySelector(".quiz-nav")) {
-      document.querySelector(".quiz-nav").classList.add("hidden");
+
+    var navEl = document.querySelector(".quiz-nav");
+    if (navEl) {
+      navEl.classList.add("hidden");
     }
+
     if (progressEl) {
       progressEl.textContent = "Your Results";
     }
 
-    let titleText = "";
-    let bodyText = "";
+    var titleText = "";
+    var bodyText = "";
 
     if (dominant === "malnourishment") {
       titleText = "Your Nutrient Deficiencies Are Driving Your Stress";
@@ -1438,52 +1514,46 @@
         ctaTitle.textContent = "Start With Cellular Nourishment";
         ctaBody.textContent =
           "We’ll help you rebuild your mineral base and daily non-negotiables so your body can step out of survival mode.";
-        ctaButtons.innerHTML = `
-          <a class="btn btn-primary btn-small" href="#cta-final">Get a Nutrient-Focused Plan</a>
-          <a class="btn btn-secondary btn-small" href="#paths">Learn How We Prioritize</a>
-        `;
+        ctaButtons.innerHTML =
+          '<a class="btn btn-primary btn-small" href="#cta-final">Get a Nutrient-Focused Plan</a>' +
+          '<a class="btn btn-secondary btn-small" href="#paths">Learn How We Prioritize</a>';
       } else if (dominant === "toxicity") {
         ctaTitle.textContent = "Start With Detox & Drainage Support";
         ctaBody.textContent =
           "We’ll map out gentle but effective ways to lower your body’s total load so nutrition and rest actually land.";
-        ctaButtons.innerHTML = `
-          <a class="btn btn-primary btn-small" href="#cta-final">Support My Detox Pathways</a>
-          <a class="btn btn-secondary btn-small" href="#paths">See Your Next Options</a>
-        `;
+        ctaButtons.innerHTML =
+          '<a class="btn btn-primary btn-small" href="#cta-final">Support My Detox Pathways</a>' +
+          '<a class="btn btn-secondary btn-small" href="#paths">See Your Next Options</a>';
       } else if (dominant === "physical") {
         ctaTitle.textContent = "Start With Pain & Structural Load";
         ctaBody.textContent =
           "We’ll help you reduce mechanical stress and reclaim movement patterns so your body has margin again.";
-        ctaButtons.innerHTML = `
-          <a class="btn btn-primary btn-small" href="#cta-final">Talk About Pain & Movement</a>
-          <a class="btn btn-secondary btn-small" href="#paths">See Both Paths</a>
-        `;
+        ctaButtons.innerHTML =
+          '<a class="btn btn-primary btn-small" href="#cta-final">Talk About Pain & Movement</a>' +
+          '<a class="btn btn-secondary btn-small" href="#paths">See Both Paths</a>';
       } else if (dominant === "emotional") {
         ctaTitle.textContent = "Start With Safety and Nervous System Repair";
         ctaBody.textContent =
           "We’ll help you connect how early experiences, current relationships, and daily stress live in your body—and what to do next.";
-        ctaButtons.innerHTML = `
-          <a class="btn btn-primary btn-small" href="#cta-final">Get Support With Stress</a>
-          <a class="btn btn-secondary btn-small" href="#paths">Explore the Two Paths</a>
-        `;
+        ctaButtons.innerHTML =
+          '<a class="btn btn-primary btn-small" href="#cta-final">Get Support With Stress</a>' +
+          '<a class="btn btn-secondary btn-small" href="#paths">Explore the Two Paths</a>';
       } else {
         ctaTitle.textContent = "Let’s Build Your Sequence Together";
         ctaBody.textContent =
           "Because your load is spread across several areas, we’ll help you choose a starting point that fits your reality and capacity.";
-        ctaButtons.innerHTML = `
-          <a class="btn btn-primary btn-small" href="#cta-final">Get a Custom Starting Plan</a>
-          <a class="btn btn-secondary btn-small" href="#paths">Review Your Options</a>
-        `;
+        ctaButtons.innerHTML =
+          '<a class="btn btn-primary btn-small" href="#cta-final">Get a Custom Starting Plan</a>' +
+          '<a class="btn btn-secondary btn-small" href="#paths">Review Your Options</a>';
       }
     }
   }
 
   function nextQuestion() {
-    const selected = document.querySelector(
-      `input[name="q${currentIndex}"]:checked`
+    var selected = document.querySelector(
+      'input[name="q' + currentIndex + '"]:checked'
     );
     if (!selected) {
-      // Simple guard: require an answer
       alert("Please choose an option to continue.");
       return;
     }
@@ -1521,8 +1591,8 @@
   // CTA EMAIL FORM HANDLER
   // ---------------------------
   (function () {
-    const ctaForm = document.getElementById("cta-form");
-    const successMsg = document.getElementById("cta-form-success");
+    var ctaForm = document.getElementById("cta-form");
+    var successMsg = document.getElementById("cta-form-success");
 
     if (!ctaForm) return;
 
