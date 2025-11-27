@@ -1188,10 +1188,11 @@
 
   // 4 categories: malnourishment, toxicity, physical, emotional
   var questions = [
-    // MALNOURISHMENT-LEANING
+    // ---------------------------
+    // MALNOURISHMENT-LEANING (7)
+    // ---------------------------
     {
-      text:
-        "How often do you feel a mid-day energy crash that you 'fix' with caffeine or sugar?",
+      text: "How often do you feel a mid-day energy crash that you 'fix' with caffeine or sugar?",
       options: [
         { label: "Rarely or never", scores: { malnourishment: 0 } },
         { label: "1–2 days per week", scores: { malnourishment: 1 } },
@@ -1200,8 +1201,7 @@
       ]
     },
     {
-      text:
-        "How steady is your blood sugar (energy, mood, focus) between meals?",
+      text: "How steady is your blood sugar (energy, mood, focus) between meals?",
       options: [
         { label: "Very steady", scores: { malnourishment: 0 } },
         { label: "Sometimes wobbly", scores: { malnourishment: 1 } },
@@ -1219,8 +1219,7 @@
       ]
     },
     {
-      text:
-        "How much real, mineral-rich food (meats, eggs, roots, fruits) do you eat daily?",
+      text: "How much real, mineral-rich food (meats, eggs, roots, fruits) do you eat daily?",
       options: [
         { label: "Most of my food is whole and real", scores: { malnourishment: 0 } },
         { label: "About half", scores: { malnourishment: 1 } },
@@ -1228,11 +1227,39 @@
         { label: "Almost all ultra-processed foods", scores: { malnourishment: 3 } }
       ]
     },
-
-    // TOXICITY-LEANING
     {
-      text:
-        "How often do you experience headaches, brain fog, or 'hungover' feeling without alcohol?",
+      text: "How often do you skip meals or eat ‘on the run’ without a proper sit-down meal?",
+      options: [
+        { label: "Almost never", scores: { malnourishment: 0 } },
+        { label: "1–2 times per week", scores: { malnourishment: 1 } },
+        { label: "Most days", scores: { malnourishment: 2 } },
+        { label: "Multiple times per day", scores: { malnourishment: 3 } }
+      ]
+    },
+    {
+      text: "How often do you wake up already feeling tired or unrefreshed, even after a full night in bed?",
+      options: [
+        { label: "Rarely", scores: { malnourishment: 0 } },
+        { label: "Sometimes", scores: { malnourishment: 1 } },
+        { label: "Most mornings", scores: { malnourishment: 2 } },
+        { label: "Almost every morning", scores: { malnourishment: 3 } }
+      ]
+    },
+    {
+      text: "How intense are your cravings for sugar, refined carbs, or quick snacks?",
+      options: [
+        { label: "Very mild or rare", scores: { malnourishment: 0 } },
+        { label: "Occasional but manageable", scores: { malnourishment: 1 } },
+        { label: "Strong cravings most days", scores: { malnourishment: 2 } },
+        { label: "Constant and hard to control", scores: { malnourishment: 3 } }
+      ]
+    },
+
+    // ---------------------------
+    // TOXICITY-LEANING (7)
+    // ---------------------------
+    {
+      text: "How often do you experience headaches, brain fog, or a 'hungover' feeling without alcohol?",
       options: [
         { label: "Rarely or never", scores: { toxicity: 0 } },
         { label: "Sometimes", scores: { toxicity: 1 } },
@@ -1241,8 +1268,7 @@
       ]
     },
     {
-      text:
-        "How sensitive are you to smells (perfumes, cleaners, exhaust, chemicals)?",
+      text: "How sensitive are you to smells (perfumes, cleaners, exhaust, chemicals)?",
       options: [
         { label: "Not sensitive", scores: { toxicity: 0 } },
         { label: "Mildly sensitive", scores: { toxicity: 1 } },
@@ -1251,8 +1277,7 @@
       ]
     },
     {
-      text:
-        "How often do you have skin reactions (rashes, hives, unexplained itching)?",
+      text: "How often do you have skin reactions (rashes, hives, unexplained itching)?",
       options: [
         { label: "Rarely or never", scores: { toxicity: 0 } },
         { label: "Occasionally", scores: { toxicity: 1 } },
@@ -1269,11 +1294,39 @@
         { label: "Severely inconsistent or chronically stuck", scores: { toxicity: 3 } }
       ]
     },
-
-    // PHYSICAL TRAUMA / PAIN-LEANING
     {
-      text:
-        "How often do you experience chronic pain or tension that doesn’t fully go away?",
+      text: "How often do you feel puffy, swollen, or retain water (especially in hands, feet, or face)?",
+      options: [
+        { label: "Almost never", scores: { toxicity: 0 } },
+        { label: "Occasionally", scores: { toxicity: 1 } },
+        { label: "Frequently", scores: { toxicity: 2 } },
+        { label: "Almost every day", scores: { toxicity: 3 } }
+      ]
+    },
+    {
+      text: "How often do you wake up feeling 'toxic'—thick tongue, bad taste in mouth, heavy head?",
+      options: [
+        { label: "Rarely or never", scores: { toxicity: 0 } },
+        { label: "A few times per month", scores: { toxicity: 1 } },
+        { label: "Most weeks", scores: { toxicity: 2 } },
+        { label: "Several times per week or more", scores: { toxicity: 3 } }
+      ]
+    },
+    {
+      text: "How does your body respond to alcohol, medication, or even supplements?",
+      options: [
+        { label: "I tolerate them well", scores: { toxicity: 0 } },
+        { label: "Occasionally a bit sensitive", scores: { toxicity: 1 } },
+        { label: "Often react strongly", scores: { toxicity: 2 } },
+        { label: "Very sensitive—tiny amounts can throw me off", scores: { toxicity: 3 } }
+      ]
+    },
+
+    // ---------------------------
+    // PHYSICAL TRAUMA / PAIN-LEANING (7)
+    // ---------------------------
+    {
+      text: "How often do you experience chronic pain or tension that doesn’t fully go away?",
       options: [
         { label: "Rarely or never", scores: { physical: 0 } },
         { label: "1–2 days per week", scores: { physical: 1 } },
@@ -1282,8 +1335,7 @@
       ]
     },
     {
-      text:
-        "Do you have an old injury or surgery that still changes how you move or live?",
+      text: "Do you have an old injury or surgery that still changes how you move or live?",
       options: [
         { label: "No significant history", scores: { physical: 0 } },
         { label: "One mild thing, mostly healed", scores: { physical: 1 } },
@@ -1292,8 +1344,7 @@
       ]
     },
     {
-      text:
-        "How do you feel after basic physical activity (walking, stairs, light movement)?",
+      text: "How do you feel after basic physical activity (walking, stairs, light movement)?",
       options: [
         { label: "Energized and fine", scores: { physical: 0 } },
         { label: "A little sore or winded", scores: { physical: 1 } },
@@ -1302,8 +1353,7 @@
       ]
     },
     {
-      text:
-        "How often do you use painkillers, muscle relaxers, or sleep meds to manage your body?",
+      text: "How often do you use painkillers, muscle relaxers, or sleep meds to manage your body?",
       options: [
         { label: "Almost never", scores: { physical: 0 } },
         { label: "Occasionally", scores: { physical: 1 } },
@@ -1311,11 +1361,39 @@
         { label: "Depend on them regularly", scores: { physical: 3 } }
       ]
     },
-
-    // EMOTIONAL TRAUMA / STRESS-LEANING
     {
-      text:
-        "How often do you feel like your body is stuck in 'fight, flight, or freeze'?",
+      text: "How would you describe your posture and alignment throughout a normal day?",
+      options: [
+        { label: "Tall, relaxed, and balanced", scores: { physical: 0 } },
+        { label: "Sometimes slouched or asymmetric", scores: { physical: 1 } },
+        { label: "Frequently hunched, twisted, or uneven", scores: { physical: 2 } },
+        { label: "My posture feels like it’s collapsing or rigid most of the time", scores: { physical: 3 } }
+      ]
+    },
+    {
+      text: "How often does physical pain or tension prevent you from doing things you want to do?",
+      options: [
+        { label: "Almost never", scores: { physical: 0 } },
+        { label: "Occasionally", scores: { physical: 1 } },
+        { label: "Regularly", scores: { physical: 2 } },
+        { label: "Very often or almost always", scores: { physical: 3 } }
+      ]
+    },
+    {
+      text: "After a normal day, what does your body feel like by evening?",
+      options: [
+        { label: "Still relatively fresh", scores: { physical: 0 } },
+        { label: "Mildly tired or tense", scores: { physical: 1 } },
+        { label: "Quite drained or sore", scores: { physical: 2 } },
+        { label: "Completely wiped out or in significant pain", scores: { physical: 3 } }
+      ]
+    },
+
+    // ---------------------------
+    // EMOTIONAL / NERVOUS SYSTEM-LEANING (7)
+    // ---------------------------
+    {
+      text: "How often do you feel like your body is stuck in 'fight, flight, or freeze'?",
       options: [
         { label: "Rarely", scores: { emotional: 0 } },
         { label: "Sometimes", scores: { emotional: 1 } },
@@ -1333,8 +1411,7 @@
       ]
     },
     {
-      text:
-        "How much do old memories, conflicts, or relationships still feel 'alive' in your nervous system?",
+      text: "How much do old memories, conflicts, or relationships still feel 'alive' in your nervous system?",
       options: [
         { label: "Barely at all", scores: { emotional: 0 } },
         { label: "Sometimes", scores: { emotional: 1 } },
@@ -1349,6 +1426,33 @@
         { label: "I get tight or wired for a bit", scores: { emotional: 1 } },
         { label: "Sleep, digestion, or mood quickly unravel", scores: { emotional: 2 } },
         { label: "I shut down, explode, or spin for days", scores: { emotional: 3 } }
+      ]
+    },
+    {
+      text: "How often do you feel like you’re performing or holding it together on the outside while struggling inside?",
+      options: [
+        { label: "Rarely", scores: { emotional: 0 } },
+        { label: "Sometimes", scores: { emotional: 1 } },
+        { label: "Most weeks", scores: { emotional: 2 } },
+        { label: "Almost every day", scores: { emotional: 3 } }
+      ]
+    },
+    {
+      text: "How easy is it for you to fall asleep and stay asleep when life is stressful?",
+      options: [
+        { label: "Sleep stays pretty solid", scores: { emotional: 0 } },
+        { label: "It’s a bit lighter or restless", scores: { emotional: 1 } },
+        { label: "Trouble falling or staying asleep most nights", scores: { emotional: 2 } },
+        { label: "Sleep feels completely disrupted by stress", scores: { emotional: 3 } }
+      ]
+    },
+    {
+      text: "How often do you feel disconnected from your body (numb, checked out, or only in your head)?",
+      options: [
+        { label: "Rarely", scores: { emotional: 0 } },
+        { label: "Occasionally", scores: { emotional: 1 } },
+        { label: "Frequently", scores: { emotional: 2 } },
+        { label: "Almost all the time", scores: { emotional: 3 } }
       ]
     }
   ];
