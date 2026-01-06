@@ -369,7 +369,11 @@ async function handleRoute(request, { params }) {
         dailyProjectedTotals[dateStr] = profitCenterData.reduce((sum, pc) => sum + (pc.daily_projected[dateStr] || 0), 0)
       }
       grandMtd = profitCenterData.reduce((sum, pc) => sum + pc.mtd, 0)
-      grandProjection = profitCenterData.reduce((sum, pc) => sum + pc.projection, 0)
+      // Only include in projection if include_in_projection is true (default true)
+      grandProjection = profitCenterData.reduce((sum, pc) => {
+        const includeInProjection = pc.include_in_projection !== false
+        return sum + (includeInProjection ? pc.projection : 0)
+      }, 0)
 
       const result = {
         month,
