@@ -1,7 +1,10 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { format, getDaysInMonth, startOfMonth, addMonths, subMonths, isToday, parseISO } from 'date-fns'
+import { format, getDaysInMonth, startOfMonth, addMonths, subMonths, isToday } from 'date-fns'
+import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
@@ -13,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ChevronLeft, ChevronRight, Plus, Settings, Building2, DollarSign, TrendingUp, Calendar, ArrowLeft, Trash2, Edit, ShoppingBag, CreditCard, Package, Calculator, Link2 } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Plus, Settings, Building2, DollarSign, TrendingUp, Calendar, ArrowLeft, Trash2, Edit, ShoppingBag, CreditCard, Package, Calculator, Link2, GripVertical, Pencil, Check, X } from 'lucide-react'
 
 const COMPANY_COLORS = [
   { name: 'Blue', value: '#3b82f6' },
@@ -43,13 +46,112 @@ function getColorTint(hexColor) {
   return hexColor + '15'
 }
 
+// ============ HEADER COMPONENT ============
+function DashboardHeader({ holdingAccount, onUpdateName, onNavigate }) {
+  const [isEditing, setIsEditing] = useState(false)
+  const [editName, setEditName] = useState(holdingAccount?.name || '')
+
+  const handleSave = async () => {
+    if (editName.trim()) {
+      await onUpdateName(editName.trim())
+      setIsEditing(false)
+    }
+  }
+
+  return (
+    <div className="border-b bg-white mb-6 -mx-4 px-4 py-3">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+            <TrendingUp className="h-5 w-5 text-primary" />
+          </div>
+          {isEditing ? (
+            <div className="flex items-center gap-2">
+              <Input 
+                value={editName} 
+                onChange={(e) => setEditName(e.target.value)}
+                className="h-8 w-64"
+                autoFocus
+                onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+              />
+              <Button size="icon" variant="ghost" onClick={handleSave}><Check className="h-4 w-4 text-green-600" /></Button>
+              <Button size="icon" variant="ghost" onClick={() => { setIsEditing(false); setEditName(holdingAccount?.name || '') }}><X className="h-4 w-4 text-red-500" /></Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold">{holdingAccount?.name || 'Loading...'}</h1>
+              <Button size="icon" variant="ghost" onClick={() => setIsEditing(true)} className="h-6 w-6">
+                <Pencil className="h-3 w-3 text-muted-foreground" />
+              </Button>
+            </div>
+          )}
+        </div>
+        <Button variant="outline" onClick={() => onNavigate('settings')}><Settings className="h-4 w-4 mr-2" />Settings</Button>
+      </div>
+    </div>
+  )
+}
+
+// ============ SORTABLE COMPANY ITEM ============
+function SortableCompanyItem({ company, profitCenters, onEdit, onDelete, onAddPC, onDeletePC, newPC, setNewPC }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: company.id })
+  
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  }
+
+  return (
+    <Card ref={setNodeRef} style={style} className={isDragging ? 'ring-2 ring-primary' : ''}>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 hover:bg-muted rounded">
+              <GripVertical className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div className="w-4 h-8 rounded" style={{ backgroundColor: company.color }}></div>
+            <CardTitle>{company.name}</CardTitle>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => onEdit(company)}><Edit className="h-4 w-4" /></Button>
+            <Button variant="ghost" size="icon" onClick={() => onDelete(company.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <form onSubmit={(e) => { e.preventDefault(); onAddPC(company.id) }} className="flex gap-2">
+          <Input 
+            placeholder="Profit center name" 
+            value={newPC.company_id === company.id ? newPC.name : ''} 
+            onChange={(e) => setNewPC({ company_id: company.id, name: e.target.value })} 
+            className="flex-1" 
+          />
+          <Button type="submit" disabled={newPC.company_id !== company.id || !newPC.name}><Plus className="h-4 w-4 mr-2" />Add</Button>
+        </form>
+        <div className="space-y-2">
+          {profitCenters.filter(pc => pc.company_id === company.id && pc.active !== false).map(pc => (
+            <div key={pc.id} className="flex items-center justify-between p-2 border rounded-lg">
+              <div className="flex items-center gap-2">
+                <div className="w-1 h-4 rounded" style={{ backgroundColor: company.color }}></div>
+                <span>{pc.name}</span>
+              </div>
+              <Button variant="ghost" size="icon" onClick={() => onDeletePC(pc.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 // ============ DASHBOARD VIEW ============
-function DashboardView({ holdingAccountId, onSelectProfitCenter, onNavigate }) {
+function DashboardView({ holdingAccountId, holdingAccount, onSelectProfitCenter, onNavigate, onUpdateHoldingName }) {
   const [selectedMonth, setSelectedMonth] = useState(startOfMonth(new Date()))
   const [dashboardData, setDashboardData] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [addTxnOpen, setAddTxnOpen] = useState(false)
-  const [txnForm, setTxnForm] = useState({ profit_center_id: '', amount: '', date: format(new Date(), 'yyyy-MM-dd'), description: '' })
+  const [cellTxnOpen, setCellTxnOpen] = useState(false)
+  const [cellTxnData, setCellTxnData] = useState({ profit_center_id: '', company_id: '', date: '', amount: '', description: '', pc_name: '', company_name: '' })
 
   const fetchDashboard = useCallback(async () => {
     setLoading(true)
@@ -72,26 +174,39 @@ function DashboardView({ holdingAccountId, onSelectProfitCenter, onNavigate }) {
   const handleNextMonth = () => setSelectedMonth(addMonths(selectedMonth, 1))
   const handleToday = () => setSelectedMonth(startOfMonth(new Date()))
 
-  const handleAddTransaction = async (e) => {
+  const handleCellClick = (pc, company, dateStr) => {
+    setCellTxnData({
+      profit_center_id: pc.id,
+      company_id: company.id,
+      date: dateStr,
+      amount: '',
+      description: '',
+      pc_name: pc.name,
+      company_name: company.name,
+      company_color: company.color
+    })
+    setCellTxnOpen(true)
+  }
+
+  const handleCellAddTransaction = async (e) => {
     e.preventDefault()
-    const pc = dashboardData?.profit_centers?.find(p => p.id === txnForm.profit_center_id)
-    if (!pc) return
+    if (!cellTxnData.amount) return
 
     await fetch('/api/transactions', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         holding_account_id: holdingAccountId,
-        profit_center_id: txnForm.profit_center_id,
-        company_id: pc.company_id,
-        txn_date: txnForm.date,
-        amount: parseFloat(txnForm.amount),
-        description: txnForm.description,
+        profit_center_id: cellTxnData.profit_center_id,
+        company_id: cellTxnData.company_id,
+        txn_date: cellTxnData.date,
+        amount: parseFloat(cellTxnData.amount),
+        description: cellTxnData.description,
         provider: 'manual'
       })
     })
-    setAddTxnOpen(false)
-    setTxnForm({ profit_center_id: '', amount: '', date: format(new Date(), 'yyyy-MM-dd'), description: '' })
+    setCellTxnOpen(false)
+    setCellTxnData({ profit_center_id: '', company_id: '', date: '', amount: '', description: '', pc_name: '', company_name: '' })
     fetchDashboard()
   }
 
@@ -108,56 +223,22 @@ function DashboardView({ holdingAccountId, onSelectProfitCenter, onNavigate }) {
   return (
     <div className="space-y-4">
       {/* Header */}
+      <DashboardHeader 
+        holdingAccount={holdingAccount} 
+        onUpdateName={onUpdateHoldingName} 
+        onNavigate={onNavigate} 
+      />
+
+      {/* Month Navigation */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h1 className="text-2xl font-bold">Revenue Dashboard</h1>
+          <h2 className="text-xl font-semibold">Revenue Dashboard</h2>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="icon" onClick={handlePrevMonth}><ChevronLeft className="h-4 w-4" /></Button>
             <span className="text-lg font-semibold min-w-[140px] text-center">{format(selectedMonth, 'MMMM yyyy')}</span>
             <Button variant="outline" size="icon" onClick={handleNextMonth}><ChevronRight className="h-4 w-4" /></Button>
             <Button variant="outline" onClick={handleToday} className="ml-2"><Calendar className="h-4 w-4 mr-2" />Today</Button>
           </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Dialog open={addTxnOpen} onOpenChange={setAddTxnOpen}>
-            <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-2" />Add Transaction</Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader><DialogTitle>Add Manual Transaction</DialogTitle></DialogHeader>
-              <form onSubmit={handleAddTransaction} className="space-y-4">
-                <div>
-                  <Label>Profit Center</Label>
-                  <Select value={txnForm.profit_center_id} onValueChange={(v) => setTxnForm({...txnForm, profit_center_id: v})}>
-                    <SelectTrigger><SelectValue placeholder="Select profit center" /></SelectTrigger>
-                    <SelectContent>
-                      {dashboardData?.companies?.map(company => (
-                        company.profit_centers?.map(pc => (
-                          <SelectItem key={pc.id} value={pc.id}>
-                            <span style={{ color: company.color }}>{company.name}</span> / {pc.name}
-                          </SelectItem>
-                        ))
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label>Date</Label>
-                  <Input type="date" value={txnForm.date} onChange={(e) => setTxnForm({...txnForm, date: e.target.value})} />
-                </div>
-                <div>
-                  <Label>Amount ($)</Label>
-                  <Input type="number" step="0.01" placeholder="0.00" value={txnForm.amount} onChange={(e) => setTxnForm({...txnForm, amount: e.target.value})} />
-                </div>
-                <div>
-                  <Label>Description</Label>
-                  <Input placeholder="Payment from customer..." value={txnForm.description} onChange={(e) => setTxnForm({...txnForm, description: e.target.value})} />
-                </div>
-                <Button type="submit" className="w-full" disabled={!txnForm.profit_center_id || !txnForm.amount}>Add Transaction</Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-          <Button variant="outline" onClick={() => onNavigate('settings')}><Settings className="h-4 w-4 mr-2" />Settings</Button>
         </div>
       </div>
 
@@ -212,16 +293,24 @@ function DashboardView({ holdingAccountId, onSelectProfitCenter, onNavigate }) {
 
                   {/* Profit Center Rows */}
                   {company.profit_centers?.map(pc => (
-                    <div key={pc.id} className="flex border-b hover:bg-muted/50 cursor-pointer group" onClick={() => onSelectProfitCenter(pc.id)}>
-                      <div className="w-[200px] min-w-[200px] p-2 pl-6 flex items-center gap-2 border-r">
+                    <div key={pc.id} className="flex border-b hover:bg-muted/30 group">
+                      <div 
+                        className="w-[200px] min-w-[200px] p-2 pl-6 flex items-center gap-2 border-r cursor-pointer hover:bg-muted/50"
+                        onClick={() => onSelectProfitCenter(pc.id)}
+                      >
                         <div className="w-1 h-6 rounded" style={{ backgroundColor: company.color }}></div>
                         <span className="truncate group-hover:underline">{pc.name}</span>
                       </div>
                       {days.map(d => {
                         const amount = pc.daily?.[d.date] || 0
                         return (
-                          <div key={d.date} className={`w-[80px] min-w-[80px] p-2 text-center text-sm border-r ${d.isToday ? 'bg-primary/5' : ''} ${amount > 0 ? 'text-green-700 font-medium' : 'text-muted-foreground'}`}>
-                            {amount > 0 ? formatCents(amount) : '-'}
+                          <div 
+                            key={d.date} 
+                            className={`w-[80px] min-w-[80px] p-2 text-center text-sm border-r cursor-pointer hover:bg-primary/10 transition-colors ${d.isToday ? 'bg-primary/5' : ''} ${amount > 0 ? 'text-green-700 font-medium' : 'text-muted-foreground'}`}
+                            onClick={() => handleCellClick(pc, company, d.date)}
+                            title={`Click to add transaction for ${pc.name} on ${d.date}`}
+                          >
+                            {amount > 0 ? formatCents(amount) : <span className="text-muted-foreground/50 group-hover:text-primary">+</span>}
                           </div>
                         )
                       })}
@@ -260,12 +349,52 @@ function DashboardView({ holdingAccountId, onSelectProfitCenter, onNavigate }) {
           <Button onClick={() => onNavigate('settings')}><Plus className="h-4 w-4 mr-2" />Add Company</Button>
         </Card>
       )}
+
+      {/* Cell Click Transaction Dialog */}
+      <Dialog open={cellTxnOpen} onOpenChange={setCellTxnOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <div className="w-3 h-6 rounded" style={{ backgroundColor: cellTxnData.company_color }}></div>
+              Add Transaction
+            </DialogTitle>
+          </DialogHeader>
+          <div className="mb-4 p-3 bg-muted rounded-lg">
+            <div className="text-sm text-muted-foreground">Profit Center</div>
+            <div className="font-semibold">{cellTxnData.company_name} / {cellTxnData.pc_name}</div>
+            <div className="text-sm text-muted-foreground mt-2">Date</div>
+            <div className="font-semibold">{cellTxnData.date}</div>
+          </div>
+          <form onSubmit={handleCellAddTransaction} className="space-y-4">
+            <div>
+              <Label>Amount ($)</Label>
+              <Input 
+                type="number" 
+                step="0.01" 
+                placeholder="0.00" 
+                value={cellTxnData.amount} 
+                onChange={(e) => setCellTxnData({...cellTxnData, amount: e.target.value})}
+                autoFocus
+              />
+            </div>
+            <div>
+              <Label>Description (optional)</Label>
+              <Input 
+                placeholder="Payment from customer..." 
+                value={cellTxnData.description} 
+                onChange={(e) => setCellTxnData({...cellTxnData, description: e.target.value})}
+              />
+            </div>
+            <Button type="submit" className="w-full" disabled={!cellTxnData.amount}>Add Transaction</Button>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
 
 // ============ PROFIT CENTER DETAIL VIEW ============
-function ProfitCenterDetail({ profitCenterId, holdingAccountId, onBack }) {
+function ProfitCenterDetail({ profitCenterId, holdingAccountId, holdingAccount, onBack, onUpdateHoldingName, onNavigate }) {
   const [profitCenter, setProfitCenter] = useState(null)
   const [company, setCompany] = useState(null)
   const [transactions, setTransactions] = useState([])
@@ -360,6 +489,12 @@ function ProfitCenterDetail({ profitCenterId, holdingAccountId, onBack }) {
   return (
     <div className="space-y-4">
       {/* Header */}
+      <DashboardHeader 
+        holdingAccount={holdingAccount} 
+        onUpdateName={onUpdateHoldingName} 
+        onNavigate={onNavigate} 
+      />
+
       <div className="flex items-center gap-4">
         <Button variant="ghost" onClick={onBack}><ArrowLeft className="h-4 w-4 mr-2" />Back to Dashboard</Button>
         <div className="flex items-center gap-2">
@@ -382,7 +517,7 @@ function ProfitCenterDetail({ profitCenterId, holdingAccountId, onBack }) {
             <CardHeader><CardTitle>Transactions</CardTitle></CardHeader>
             <CardContent>
               {transactions.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">No transactions yet. Add one from the dashboard.</p>
+                <p className="text-muted-foreground text-center py-8">No transactions yet. Click on a cell in the dashboard to add one.</p>
               ) : (
                 <div className="space-y-2">
                   {transactions.map(txn => (
@@ -404,7 +539,6 @@ function ProfitCenterDetail({ profitCenterId, holdingAccountId, onBack }) {
             </CardContent>
           </Card>
 
-          {/* Edit Transaction Dialog */}
           {editTxn && (
             <Dialog open={!!editTxn} onOpenChange={() => setEditTxn(null)}>
               <DialogContent>
@@ -494,13 +628,18 @@ function ProfitCenterDetail({ profitCenterId, holdingAccountId, onBack }) {
 }
 
 // ============ SETTINGS VIEW ============
-function SettingsView({ holdingAccountId, onBack }) {
+function SettingsView({ holdingAccountId, holdingAccount, onBack, onUpdateHoldingName, onNavigate }) {
   const [companies, setCompanies] = useState([])
   const [profitCenters, setProfitCenters] = useState([])
   const [loading, setLoading] = useState(true)
   const [newCompany, setNewCompany] = useState({ name: '', color: COMPANY_COLORS[0].value })
   const [newPC, setNewPC] = useState({ company_id: '', name: '' })
   const [editCompany, setEditCompany] = useState(null)
+
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  )
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -542,12 +681,12 @@ function SettingsView({ holdingAccountId, onBack }) {
     fetchData()
   }
 
-  const handleAddProfitCenter = async (e) => {
-    e.preventDefault()
+  const handleAddProfitCenter = async (companyId) => {
+    if (newPC.company_id !== companyId || !newPC.name) return
     await fetch('/api/profit-centers', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ holding_account_id: holdingAccountId, ...newPC })
+      body: JSON.stringify({ holding_account_id: holdingAccountId, company_id: companyId, name: newPC.name })
     })
     setNewPC({ company_id: '', name: '' })
     fetchData()
@@ -558,12 +697,37 @@ function SettingsView({ holdingAccountId, onBack }) {
     fetchData()
   }
 
+  const handleDragEnd = async (event) => {
+    const { active, over } = event
+    if (active.id !== over?.id) {
+      const oldIndex = companies.findIndex(c => c.id === active.id)
+      const newIndex = companies.findIndex(c => c.id === over.id)
+      const newOrder = arrayMove(companies, oldIndex, newIndex)
+      setCompanies(newOrder)
+      
+      // Save new order to backend
+      await fetch('/api/companies/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order: newOrder.map(c => c.id) })
+      })
+    }
+  }
+
   if (loading) {
     return <div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div></div>
   }
 
+  const activeCompanies = companies.filter(c => c.active !== false)
+
   return (
     <div className="space-y-6">
+      <DashboardHeader 
+        holdingAccount={holdingAccount} 
+        onUpdateName={onUpdateHoldingName} 
+        onNavigate={onNavigate} 
+      />
+
       <div className="flex items-center gap-4">
         <Button variant="ghost" onClick={onBack}><ArrowLeft className="h-4 w-4 mr-2" />Back to Dashboard</Button>
         <h1 className="text-2xl font-bold">Settings</h1>
@@ -606,43 +770,34 @@ function SettingsView({ holdingAccountId, onBack }) {
             </CardContent>
           </Card>
 
-          {/* Companies List */}
-          {companies.filter(c => c.active !== false).map(company => (
-            <Card key={company.id}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="w-4 h-8 rounded" style={{ backgroundColor: company.color }}></div>
-                    <CardTitle>{company.name}</CardTitle>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => setEditCompany(company)}><Edit className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => handleDeleteCompany(company.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {/* Add Profit Center */}
-                <form onSubmit={handleAddProfitCenter} className="flex gap-2">
-                  <Input placeholder="Profit center name" value={newPC.company_id === company.id ? newPC.name : ''} onChange={(e) => setNewPC({ company_id: company.id, name: e.target.value })} className="flex-1" />
-                  <Button type="submit" disabled={newPC.company_id !== company.id || !newPC.name}><Plus className="h-4 w-4 mr-2" />Add</Button>
-                </form>
+          {/* Drag and Drop hint */}
+          {activeCompanies.length > 1 && (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <GripVertical className="h-4 w-4" />
+              <span>Drag companies to reorder them</span>
+            </div>
+          )}
 
-                {/* Profit Centers List */}
-                <div className="space-y-2">
-                  {profitCenters.filter(pc => pc.company_id === company.id && pc.active !== false).map(pc => (
-                    <div key={pc.id} className="flex items-center justify-between p-2 border rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <div className="w-1 h-4 rounded" style={{ backgroundColor: company.color }}></div>
-                        <span>{pc.name}</span>
-                      </div>
-                      <Button variant="ghost" size="icon" onClick={() => handleDeleteProfitCenter(pc.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {/* Companies List with Drag and Drop */}
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={activeCompanies.map(c => c.id)} strategy={verticalListSortingStrategy}>
+              <div className="space-y-4">
+                {activeCompanies.map(company => (
+                  <SortableCompanyItem
+                    key={company.id}
+                    company={company}
+                    profitCenters={profitCenters}
+                    onEdit={setEditCompany}
+                    onDelete={handleDeleteCompany}
+                    onAddPC={handleAddProfitCenter}
+                    onDeletePC={handleDeleteProfitCenter}
+                    newPC={newPC}
+                    setNewPC={setNewPC}
+                  />
+                ))}
+              </div>
+            </SortableContext>
+          </DndContext>
 
           {/* Edit Company Dialog */}
           {editCompany && (
@@ -720,18 +875,23 @@ function SettingsView({ holdingAccountId, onBack }) {
 export default function App() {
   const [view, setView] = useState('loading')
   const [holdingAccountId, setHoldingAccountId] = useState(null)
+  const [holdingAccount, setHoldingAccount] = useState(null)
   const [selectedProfitCenterId, setSelectedProfitCenterId] = useState(null)
-  const [holdingAccounts, setHoldingAccounts] = useState([])
   const [newAccountName, setNewAccountName] = useState('')
 
+  const fetchHoldingAccount = useCallback(async (id) => {
+    const res = await fetch(`/api/holding-accounts/${id}`)
+    const account = await res.json()
+    setHoldingAccount(account)
+  }, [])
+
   useEffect(() => {
-    // Check for existing holding accounts
     fetch('/api/holding-accounts')
       .then(res => res.json())
       .then(accounts => {
-        setHoldingAccounts(accounts)
         if (accounts.length > 0) {
           setHoldingAccountId(accounts[0].id)
+          setHoldingAccount(accounts[0])
           setView('dashboard')
         } else {
           setView('onboarding')
@@ -749,7 +909,17 @@ export default function App() {
     })
     const account = await res.json()
     setHoldingAccountId(account.id)
+    setHoldingAccount(account)
     setView('dashboard')
+  }
+
+  const handleUpdateHoldingName = async (name) => {
+    await fetch(`/api/holding-accounts/${holdingAccountId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    })
+    await fetchHoldingAccount(holdingAccountId)
   }
 
   const handleSelectProfitCenter = (id) => {
@@ -764,7 +934,6 @@ export default function App() {
     setView(newView)
   }
 
-  // Loading
   if (view === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -776,7 +945,6 @@ export default function App() {
     )
   }
 
-  // Onboarding
   if (view === 'onboarding') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -791,7 +959,7 @@ export default function App() {
           <CardContent>
             <form onSubmit={handleCreateAccount} className="space-y-4">
               <div>
-                <Label>Holding Account Name</Label>
+                <Label>Holding Company Name</Label>
                 <Input placeholder="My Business Holdings" value={newAccountName} onChange={(e) => setNewAccountName(e.target.value)} />
               </div>
               <Button type="submit" className="w-full">Create Account</Button>
@@ -807,22 +975,30 @@ export default function App() {
       <div className="container mx-auto py-6 px-4">
         {view === 'dashboard' && (
           <DashboardView 
-            holdingAccountId={holdingAccountId} 
+            holdingAccountId={holdingAccountId}
+            holdingAccount={holdingAccount}
             onSelectProfitCenter={handleSelectProfitCenter}
             onNavigate={handleNavigate}
+            onUpdateHoldingName={handleUpdateHoldingName}
           />
         )}
         {view === 'profit-center' && (
           <ProfitCenterDetail 
             profitCenterId={selectedProfitCenterId} 
             holdingAccountId={holdingAccountId}
+            holdingAccount={holdingAccount}
             onBack={() => handleNavigate('dashboard')}
+            onNavigate={handleNavigate}
+            onUpdateHoldingName={handleUpdateHoldingName}
           />
         )}
         {view === 'settings' && (
           <SettingsView 
             holdingAccountId={holdingAccountId}
+            holdingAccount={holdingAccount}
             onBack={() => handleNavigate('dashboard')}
+            onNavigate={handleNavigate}
+            onUpdateHoldingName={handleUpdateHoldingName}
           />
         )}
       </div>
