@@ -70,6 +70,17 @@ async function handleRoute(request, { params }) {
       return handleCORS(NextResponse.json(result))
     }
 
+    // Update holding account
+    if (route.match(/^\/holding-accounts\/[^/]+$/) && method === 'PUT') {
+      const id = path[1]
+      const body = await request.json()
+      const update = { name: body.name, updated_at: new Date() }
+      await db.collection('holding_accounts').updateOne({ id }, { $set: update })
+      const account = await db.collection('holding_accounts').findOne({ id })
+      const { _id, ...result } = account
+      return handleCORS(NextResponse.json(result))
+    }
+
     // ============ COMPANIES ============
     if (route === '/companies' && method === 'GET') {
       const holdingAccountId = url.searchParams.get('holding_account_id')
