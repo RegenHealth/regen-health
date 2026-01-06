@@ -7,7 +7,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, useSortable, v
 import { CSS } from '@dnd-kit/utilities'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -16,7 +16,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Textarea } from '@/components/ui/textarea'
 import { Badge } from '@/components/ui/badge'
 import { Separator } from '@/components/ui/separator'
-import { ChevronLeft, ChevronRight, Plus, Settings, Building2, DollarSign, TrendingUp, Calendar, ArrowLeft, Trash2, Edit, ShoppingBag, CreditCard, Package, Calculator, Link2, GripVertical, Pencil, Check, X } from 'lucide-react'
+import { Checkbox } from '@/components/ui/checkbox'
+import { ChevronLeft, ChevronRight, Plus, Settings, Building2, TrendingUp, Calendar, ArrowLeft, Trash2, Edit, ShoppingBag, CreditCard, Package, Calculator, Link2, GripVertical, Pencil, Check, X, Clock } from 'lucide-react'
 
 const COMPANY_COLORS = [
   { name: 'Blue', value: '#3b82f6' },
@@ -151,7 +152,7 @@ function DashboardView({ holdingAccountId, holdingAccount, onSelectProfitCenter,
   const [dashboardData, setDashboardData] = useState(null)
   const [loading, setLoading] = useState(true)
   const [cellTxnOpen, setCellTxnOpen] = useState(false)
-  const [cellTxnData, setCellTxnData] = useState({ profit_center_id: '', company_id: '', date: '', amount: '', description: '', pc_name: '', company_name: '' })
+  const [cellTxnData, setCellTxnData] = useState({ profit_center_id: '', company_id: '', date: '', amount: '', description: '', pc_name: '', company_name: '', is_projected: false })
 
   const fetchDashboard = useCallback(async () => {
     setLoading(true)
@@ -183,7 +184,8 @@ function DashboardView({ holdingAccountId, holdingAccount, onSelectProfitCenter,
       description: '',
       pc_name: pc.name,
       company_name: company.name,
-      company_color: company.color
+      company_color: company.color,
+      is_projected: false
     })
     setCellTxnOpen(true)
   }
@@ -202,11 +204,12 @@ function DashboardView({ holdingAccountId, holdingAccount, onSelectProfitCenter,
         txn_date: cellTxnData.date,
         amount: parseFloat(cellTxnData.amount),
         description: cellTxnData.description,
-        provider: 'manual'
+        provider: 'manual',
+        is_projected: cellTxnData.is_projected
       })
     })
     setCellTxnOpen(false)
-    setCellTxnData({ profit_center_id: '', company_id: '', date: '', amount: '', description: '', pc_name: '', company_name: '' })
+    setCellTxnData({ profit_center_id: '', company_id: '', date: '', amount: '', description: '', pc_name: '', company_name: '', is_projected: false })
     fetchDashboard()
   }
 
@@ -240,16 +243,26 @@ function DashboardView({ holdingAccountId, holdingAccount, onSelectProfitCenter,
             <Button variant="outline" onClick={handleToday} className="ml-2"><Calendar className="h-4 w-4 mr-2" />Today</Button>
           </div>
         </div>
+        <div className="flex items-center gap-4 text-sm">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded bg-green-600"></div>
+            <span className="text-muted-foreground">Actual</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded bg-gray-400"></div>
+            <span className="text-muted-foreground">Projected</span>
+          </div>
+        </div>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-3 gap-4">
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">MTD Revenue</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">MTD Revenue (Actual)</CardTitle></CardHeader>
           <CardContent><div className="text-2xl font-bold text-green-600">{formatCents(dashboardData?.grand_mtd || 0)}</div></CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Projected Revenue</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-sm font-medium text-muted-foreground">Run-Rate Projection</CardTitle></CardHeader>
           <CardContent><div className="text-2xl font-bold text-blue-600">{formatCents(dashboardData?.grand_projection || 0)}</div></CardContent>
         </Card>
         <Card>
@@ -261,11 +274,13 @@ function DashboardView({ holdingAccountId, holdingAccount, onSelectProfitCenter,
       {/* Revenue Grid */}
       <Card>
         <CardContent className="p-0">
-          <ScrollArea className="w-full whitespace-nowrap">
-            <div className="min-w-max">
+          <div className="overflow-x-auto">
+            <div className="min-w-max relative">
               {/* Header Row */}
-              <div className="flex border-b bg-muted/50 sticky top-0 z-10">
-                <div className="w-[200px] min-w-[200px] p-3 font-semibold border-r bg-muted">Profit Center</div>
+              <div className="flex border-b bg-muted/50">
+                <div className="w-[200px] min-w-[200px] p-3 font-semibold border-r bg-muted sticky left-0 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                  Profit Center
+                </div>
                 {days.map(d => (
                   <div key={d.date} className={`w-[80px] min-w-[80px] p-2 text-center text-xs border-r ${d.isToday ? 'bg-primary/10 font-bold' : ''}`}>
                     <div className="text-muted-foreground">{d.dow}</div>
@@ -281,7 +296,7 @@ function DashboardView({ holdingAccountId, holdingAccount, onSelectProfitCenter,
                 <div key={company.id}>
                   {/* Company Header */}
                   <div className="flex border-b" style={{ backgroundColor: getColorTint(company.color) }}>
-                    <div className="w-[200px] min-w-[200px] p-2 font-semibold flex items-center gap-2 border-r">
+                    <div className="w-[200px] min-w-[200px] p-2 font-semibold flex items-center gap-2 border-r sticky left-0 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]" style={{ backgroundColor: getColorTint(company.color) }}>
                       <div className="w-3 h-full min-h-[24px] rounded" style={{ backgroundColor: company.color }}></div>
                       <Building2 className="h-4 w-4" style={{ color: company.color }} />
                       <span>{company.name}</span>
@@ -295,22 +310,37 @@ function DashboardView({ holdingAccountId, holdingAccount, onSelectProfitCenter,
                   {company.profit_centers?.map(pc => (
                     <div key={pc.id} className="flex border-b hover:bg-muted/30 group">
                       <div 
-                        className="w-[200px] min-w-[200px] p-2 pl-6 flex items-center gap-2 border-r cursor-pointer hover:bg-muted/50"
+                        className="w-[200px] min-w-[200px] p-2 pl-6 flex items-center gap-2 border-r cursor-pointer hover:bg-muted/50 bg-background sticky left-0 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]"
                         onClick={() => onSelectProfitCenter(pc.id)}
                       >
                         <div className="w-1 h-6 rounded" style={{ backgroundColor: company.color }}></div>
                         <span className="truncate group-hover:underline">{pc.name}</span>
                       </div>
                       {days.map(d => {
-                        const amount = pc.daily?.[d.date] || 0
+                        const actualAmount = pc.daily?.[d.date] || 0
+                        const projectedAmount = pc.daily_projected?.[d.date] || 0
+                        const hasActual = actualAmount > 0
+                        const hasProjected = projectedAmount > 0
+                        
                         return (
                           <div 
                             key={d.date} 
-                            className={`w-[80px] min-w-[80px] p-2 text-center text-sm border-r cursor-pointer hover:bg-primary/10 transition-colors ${d.isToday ? 'bg-primary/5' : ''} ${amount > 0 ? 'text-green-700 font-medium' : 'text-muted-foreground'}`}
+                            className={`w-[80px] min-w-[80px] p-2 text-center text-sm border-r cursor-pointer hover:bg-primary/10 transition-colors ${d.isToday ? 'bg-primary/5' : ''}`}
                             onClick={() => handleCellClick(pc, company, d.date)}
                             title={`Click to add transaction for ${pc.name} on ${d.date}`}
                           >
-                            {amount > 0 ? formatCents(amount) : <span className="text-muted-foreground/50 group-hover:text-primary">+</span>}
+                            {hasActual && (
+                              <div className="text-green-700 font-medium">{formatCents(actualAmount)}</div>
+                            )}
+                            {hasProjected && (
+                              <div className="text-gray-400 font-medium flex items-center justify-center gap-1">
+                                <Clock className="h-3 w-3" />
+                                {formatCents(projectedAmount)}
+                              </div>
+                            )}
+                            {!hasActual && !hasProjected && (
+                              <span className="text-muted-foreground/30 group-hover:text-primary">+</span>
+                            )}
                           </div>
                         )
                       })}
@@ -322,13 +352,16 @@ function DashboardView({ holdingAccountId, holdingAccount, onSelectProfitCenter,
               ))}
 
               {/* Totals Row */}
-              <div className="flex border-t-2 border-primary bg-muted font-bold sticky bottom-0">
-                <div className="w-[200px] min-w-[200px] p-3 border-r">TOTALS</div>
+              <div className="flex border-t-2 border-primary bg-muted font-bold">
+                <div className="w-[200px] min-w-[200px] p-3 border-r bg-muted sticky left-0 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">TOTALS</div>
                 {days.map(d => {
-                  const total = dashboardData?.daily_totals?.[d.date] || 0
+                  const actualTotal = dashboardData?.daily_totals?.[d.date] || 0
+                  const projectedTotal = dashboardData?.daily_projected_totals?.[d.date] || 0
                   return (
-                    <div key={d.date} className={`w-[80px] min-w-[80px] p-2 text-center text-sm border-r ${d.isToday ? 'bg-primary/10' : ''} ${total > 0 ? 'text-green-700' : ''}`}>
-                      {total > 0 ? formatCents(total) : '-'}
+                    <div key={d.date} className={`w-[80px] min-w-[80px] p-2 text-center text-sm border-r ${d.isToday ? 'bg-primary/10' : ''}`}>
+                      {actualTotal > 0 && <div className="text-green-700">{formatCents(actualTotal)}</div>}
+                      {projectedTotal > 0 && <div className="text-gray-400 text-xs">(+{formatCents(projectedTotal)})</div>}
+                      {actualTotal === 0 && projectedTotal === 0 && '-'}
                     </div>
                   )
                 })}
@@ -336,8 +369,7 @@ function DashboardView({ holdingAccountId, holdingAccount, onSelectProfitCenter,
                 <div className="w-[100px] min-w-[100px] p-2 text-center text-blue-700">{formatCents(dashboardData?.grand_projection || 0)}</div>
               </div>
             </div>
-            <ScrollBar orientation="horizontal" />
-          </ScrollArea>
+          </div>
         </CardContent>
       </Card>
 
@@ -385,7 +417,23 @@ function DashboardView({ holdingAccountId, holdingAccount, onSelectProfitCenter,
                 onChange={(e) => setCellTxnData({...cellTxnData, description: e.target.value})}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={!cellTxnData.amount}>Add Transaction</Button>
+            <div className="flex items-center space-x-3 p-3 border rounded-lg bg-amber-50 border-amber-200">
+              <Checkbox 
+                id="is_projected" 
+                checked={cellTxnData.is_projected}
+                onCheckedChange={(checked) => setCellTxnData({...cellTxnData, is_projected: checked})}
+              />
+              <div className="flex-1">
+                <Label htmlFor="is_projected" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                  <Clock className="h-4 w-4 text-amber-600" />
+                  Projected Revenue
+                </Label>
+                <p className="text-xs text-muted-foreground">This revenue is expected but hasn't been received yet. It won't count toward totals until confirmed.</p>
+              </div>
+            </div>
+            <Button type="submit" className="w-full" disabled={!cellTxnData.amount}>
+              {cellTxnData.is_projected ? 'Add as Projected' : 'Add Transaction'}
+            </Button>
           </form>
         </DialogContent>
       </Dialog>
@@ -476,7 +524,12 @@ function ProfitCenterDetail({ profitCenterId, holdingAccountId, holdingAccount, 
     await fetch(`/api/transactions/${editTxn.id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ txn_date: editTxn.txn_date, amount: parseFloat(editTxn.amount), description: editTxn.description })
+      body: JSON.stringify({ 
+        txn_date: editTxn.txn_date, 
+        amount: parseFloat(editTxn.amount), 
+        description: editTxn.description,
+        is_projected: editTxn.is_projected
+      })
     })
     setEditTxn(null)
     fetchData()
@@ -521,10 +574,18 @@ function ProfitCenterDetail({ profitCenterId, holdingAccountId, holdingAccount, 
               ) : (
                 <div className="space-y-2">
                   {transactions.map(txn => (
-                    <div key={txn.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50">
+                    <div key={txn.id} className={`flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 ${txn.is_projected ? 'bg-amber-50 border-amber-200' : ''}`}>
                       <div className="flex items-center gap-4">
                         <div className="text-sm text-muted-foreground w-24">{txn.txn_date}</div>
-                        <div className="font-semibold text-green-700 w-24">{formatCents(txn.amount_cents)}</div>
+                        <div className={`font-semibold w-24 ${txn.is_projected ? 'text-gray-400' : 'text-green-700'}`}>
+                          {formatCents(txn.amount_cents)}
+                        </div>
+                        {txn.is_projected && (
+                          <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-300">
+                            <Clock className="h-3 w-3 mr-1" />
+                            Projected
+                          </Badge>
+                        )}
                         <Badge variant="outline">{txn.provider}</Badge>
                         <div className="text-sm">{txn.description || '-'}</div>
                       </div>
@@ -546,7 +607,21 @@ function ProfitCenterDetail({ profitCenterId, holdingAccountId, holdingAccount, 
                 <form onSubmit={handleUpdateTransaction} className="space-y-4">
                   <div><Label>Date</Label><Input type="date" value={editTxn.txn_date} onChange={(e) => setEditTxn({...editTxn, txn_date: e.target.value})} /></div>
                   <div><Label>Amount ($)</Label><Input type="number" step="0.01" value={editTxn.amount} onChange={(e) => setEditTxn({...editTxn, amount: e.target.value})} /></div>
-                  <div><Label>Description</Label><Input value={editTxn.description} onChange={(e) => setEditTxn({...editTxn, description: e.target.value})} /></div>
+                  <div><Label>Description</Label><Input value={editTxn.description || ''} onChange={(e) => setEditTxn({...editTxn, description: e.target.value})} /></div>
+                  <div className="flex items-center space-x-3 p-3 border rounded-lg bg-amber-50 border-amber-200">
+                    <Checkbox 
+                      id="edit_is_projected" 
+                      checked={editTxn.is_projected || false}
+                      onCheckedChange={(checked) => setEditTxn({...editTxn, is_projected: checked})}
+                    />
+                    <div className="flex-1">
+                      <Label htmlFor="edit_is_projected" className="text-sm font-medium cursor-pointer flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-amber-600" />
+                        Projected Revenue
+                      </Label>
+                      <p className="text-xs text-muted-foreground">Uncheck to confirm this revenue has been received.</p>
+                    </div>
+                  </div>
                   <Button type="submit" className="w-full">Save Changes</Button>
                 </form>
               </DialogContent>
@@ -705,7 +780,6 @@ function SettingsView({ holdingAccountId, holdingAccount, onBack, onUpdateHoldin
       const newOrder = arrayMove(companies, oldIndex, newIndex)
       setCompanies(newOrder)
       
-      // Save new order to backend
       await fetch('/api/companies/reorder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -739,9 +813,7 @@ function SettingsView({ holdingAccountId, holdingAccount, onBack, onUpdateHoldin
           <TabsTrigger value="connections">Connections</TabsTrigger>
         </TabsList>
 
-        {/* Companies Tab */}
         <TabsContent value="companies" className="space-y-6">
-          {/* Add Company */}
           <Card>
             <CardHeader><CardTitle>Add Company</CardTitle></CardHeader>
             <CardContent>
@@ -770,7 +842,6 @@ function SettingsView({ holdingAccountId, holdingAccount, onBack, onUpdateHoldin
             </CardContent>
           </Card>
 
-          {/* Drag and Drop hint */}
           {activeCompanies.length > 1 && (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <GripVertical className="h-4 w-4" />
@@ -778,7 +849,6 @@ function SettingsView({ holdingAccountId, holdingAccount, onBack, onUpdateHoldin
             </div>
           )}
 
-          {/* Companies List with Drag and Drop */}
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={activeCompanies.map(c => c.id)} strategy={verticalListSortingStrategy}>
               <div className="space-y-4">
@@ -799,7 +869,6 @@ function SettingsView({ holdingAccountId, holdingAccount, onBack, onUpdateHoldin
             </SortableContext>
           </DndContext>
 
-          {/* Edit Company Dialog */}
           {editCompany && (
             <Dialog open={!!editCompany} onOpenChange={() => setEditCompany(null)}>
               <DialogContent>
@@ -834,7 +903,6 @@ function SettingsView({ holdingAccountId, holdingAccount, onBack, onUpdateHoldin
           )}
         </TabsContent>
 
-        {/* Connections Tab */}
         <TabsContent value="connections">
           <Card>
             <CardHeader>
