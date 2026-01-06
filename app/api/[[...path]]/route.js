@@ -157,6 +157,7 @@ async function handleRoute(request, { params }) {
         company_id: body.company_id,
         name: body.name,
         display_order: body.display_order ?? count,
+        include_in_projection: true,
         active: true,
         created_at: new Date(),
         updated_at: new Date()
@@ -171,6 +172,8 @@ async function handleRoute(request, { params }) {
       const pc = await db.collection('profit_centers').findOne({ id })
       if (!pc) return handleCORS(NextResponse.json({ error: 'Not found' }, { status: 404 }))
       const { _id, ...result } = pc
+      // Default include_in_projection to true if not set
+      if (result.include_in_projection === undefined) result.include_in_projection = true
       return handleCORS(NextResponse.json(result))
     }
 
