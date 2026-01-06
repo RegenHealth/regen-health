@@ -126,6 +126,16 @@ async function handleRoute(request, { params }) {
       return handleCORS(NextResponse.json({ success: true }))
     }
 
+    // Batch reorder companies
+    if (route === '/companies/reorder' && method === 'POST') {
+      const body = await request.json()
+      const updates = body.order.map((id, index) => 
+        db.collection('companies').updateOne({ id }, { $set: { display_order: index, updated_at: new Date() } })
+      )
+      await Promise.all(updates)
+      return handleCORS(NextResponse.json({ success: true }))
+    }
+
     // ============ PROFIT CENTERS ============
     if (route === '/profit-centers' && method === 'GET') {
       const holdingAccountId = url.searchParams.get('holding_account_id')
