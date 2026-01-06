@@ -289,24 +289,32 @@ async function handleRoute(request, { params }) {
         })
         .toArray()
 
-      // Build daily aggregation
+      // Build daily aggregation - separate actual vs projected
       const dailyData = {}
+      const dailyProjected = {}
       for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${month}-${String(day).padStart(2, '0')}`
         dailyData[dateStr] = {}
+        dailyProjected[dateStr] = {}
         profitCenters.forEach(pc => {
           dailyData[dateStr][pc.id] = 0
+          dailyProjected[dateStr][pc.id] = 0
         })
       }
 
       transactions.forEach(txn => {
         if (dailyData[txn.txn_date] && txn.profit_center_id) {
-          dailyData[txn.txn_date][txn.profit_center_id] = 
-            (dailyData[txn.txn_date][txn.profit_center_id] || 0) + txn.amount_cents
+          if (txn.is_projected) {
+            dailyProjected[txn.txn_date][txn.profit_center_id] = 
+              (dailyProjected[txn.txn_date][txn.profit_center_id] || 0) + txn.amount_cents
+          } else {
+            dailyData[txn.txn_date][txn.profit_center_id] = 
+              (dailyData[txn.txn_date][txn.profit_center_id] || 0) + txn.amount_cents
+          }
         }
       })
 
-      // Calculate MTD and projections
+      // Calculate MTD and projections (only actual transactions count)
       const today = new Date()
       const isCurrentMonth = today.getFullYear() === year && today.getMonth() + 1 === monthNum
       const dayOfMonth = isCurrentMonth ? today.getDate() : daysInMonth
@@ -315,12 +323,15 @@ async function handleRoute(request, { params }) {
         const company = companies.find(c => c.id === pc.company_id)
         let mtd = 0
         const dailyCells = {}
+        const projectedCells = {}
         
         for (let day = 1; day <= daysInMonth; day++) {
           const dateStr = `${month}-${String(day).padStart(2, '0')}`
-          const amount = dailyData[dateStr]?.[pc.id] || 0
-          dailyCells[dateStr] = amount
-          if (day <= dayOfMonth) mtd += amount
+          const actualAmount = dailyData[dateStr]?.[pc.id] || 0
+          const projectedAmount = dailyProjected[dateStr]?.[pc.id] || 0
+          dailyCells[dateStr] = actualAmount
+          projectedCells[dateStr] = projectedAmount
+          if (day <= dayOfMonth) mtd += actualAmount // Only actual counts toward MTD
         }
 
         const avgDaily = dayOfMonth > 0 ? mtd / dayOfMonth : 0
@@ -331,6 +342,7 @@ async function handleRoute(request, { params }) {
           company_name: company?.name || 'Unknown',
           company_color: company?.color || '#gray',
           daily: dailyCells,
+          daily_projected: projectedCells,
           mtd,
           projection
         }
@@ -342,14 +354,16 @@ async function handleRoute(request, { params }) {
         profit_centers: profitCenterData.filter(pc => pc.company_id === company.id)
       }))
 
-      // Calculate totals
+      // Calculate totals (only actual)
       const dailyTotals = {}
+      const dailyProjectedTotals = {}
       let grandMtd = 0
       let grandProjection = 0
       
       for (let day = 1; day <= daysInMonth; day++) {
         const dateStr = `${month}-${String(day).padStart(2, '0')}`
         dailyTotals[dateStr] = profitCenterData.reduce((sum, pc) => sum + (pc.daily[dateStr] || 0), 0)
+        dailyProjectedTotals[dateStr] = profitCenterData.reduce((sum, pc) => sum + (pc.daily_projected[dateStr] || 0), 0)
       }
       grandMtd = profitCenterData.reduce((sum, pc) => sum + pc.mtd, 0)
       grandProjection = profitCenterData.reduce((sum, pc) => sum + pc.projection, 0)
@@ -365,6 +379,7 @@ async function handleRoute(request, { params }) {
         })),
         profit_centers: profitCenterData.map(({ _id, ...pc }) => pc),
         daily_totals: dailyTotals,
+        daily_projected_totals: dailyProjectedTotals,
         grand_mtd: grandMtd,
         grand_projection: grandProjection
       }
