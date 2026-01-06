@@ -228,6 +228,7 @@ async function handleRoute(request, { params }) {
         external_id: body.external_id || null,
         description: body.description || '',
         raw_event_id: body.raw_event_id || null,
+        is_projected: body.is_projected || false,
         created_at: new Date()
       }
       await db.collection('normalized_transactions').insertOne(transaction)
