@@ -522,16 +522,13 @@ async function handleRoute(request, { params }) {
     }
 
     // ============ KANBAN COLUMNS ============
+    // NEW: Single set of columns per holding account (not per profit center)
     if (route === '/kanban/columns' && method === 'GET') {
       const holdingAccountId = url.searchParams.get('holding_account_id')
-      const profitCenterId = url.searchParams.get('profit_center_id')
-      const query = { holding_account_id: holdingAccountId }
-      if (profitCenterId) {
-        query.profit_center_id = profitCenterId
-      } else {
-        query.profit_center_id = null // Master board
-      }
-      const columns = await db.collection('kanban_columns').find(query).sort({ display_order: 1 }).toArray()
+      const columns = await db.collection('kanban_columns')
+        .find({ holding_account_id: holdingAccountId })
+        .sort({ position: 1 })
+        .toArray()
       const cleaned = columns.map(({ _id, ...rest }) => rest)
       return handleCORS(NextResponse.json(cleaned))
     }
@@ -539,16 +536,15 @@ async function handleRoute(request, { params }) {
     if (route === '/kanban/columns' && method === 'POST') {
       const body = await request.json()
       const count = await db.collection('kanban_columns').countDocuments({ 
-        holding_account_id: body.holding_account_id,
-        profit_center_id: body.profit_center_id || null
+        holding_account_id: body.holding_account_id
       })
       const column = {
         id: uuidv4(),
         holding_account_id: body.holding_account_id,
-        profit_center_id: body.profit_center_id || null,
-        name: body.name,
+        key: body.key || `custom_${Date.now()}`,
+        title: body.title || body.name,
         color: body.color || '#6b7280',
-        display_order: body.display_order ?? count,
+        position: body.position ?? count,
         created_at: new Date()
       }
       await db.collection('kanban_columns').insertOne(column)
@@ -559,9 +555,11 @@ async function handleRoute(request, { params }) {
     if (route.match(/^\/kanban\/columns\/[^/]+$/) && method === 'PUT') {
       const id = path[2]
       const body = await request.json()
-      const update = { ...body, updated_at: new Date() }
-      delete update.id
-      delete update._id
+      const update = { updated_at: new Date() }
+      if (body.title) update.title = body.title
+      if (body.name) update.title = body.name
+      if (body.color) update.color = body.color
+      if (body.position !== undefined) update.position = body.position
       await db.collection('kanban_columns').updateOne({ id }, { $set: update })
       const column = await db.collection('kanban_columns').findOne({ id })
       const { _id, ...result } = column
@@ -570,8 +568,25 @@ async function handleRoute(request, { params }) {
 
     if (route.match(/^\/kanban\/columns\/[^/]+$/) && method === 'DELETE') {
       const id = path[2]
-      // Also delete cards in this column
-      await db.collection('kanban_cards').deleteMany({ column_id: id })
+      const column = await db.collection('kanban_columns').findOne({ id })
+      if (!column) return handleCORS(NextResponse.json({ error: 'Column not found' }, { status: 404 }))
+      
+      // Find previous column to move cards to
+      const prevColumn = await db.collection('kanban_columns')
+        .findOne({ holding_account_id: column.holding_account_id, position: { $lt: column.position } }, { sort: { position: -1 } })
+      
+      if (prevColumn) {
+        // Move cards to previous column
+        await db.collection('kanban_cards').updateMany({ column_id: id }, { $set: { column_id: prevColumn.id } })
+      } else {
+        // Find next column
+        const nextColumn = await db.collection('kanban_columns')
+          .findOne({ holding_account_id: column.holding_account_id, position: { $gt: column.position } }, { sort: { position: 1 } })
+        if (nextColumn) {
+          await db.collection('kanban_cards').updateMany({ column_id: id }, { $set: { column_id: nextColumn.id } })
+        }
+      }
+      
       await db.collection('kanban_columns').deleteOne({ id })
       return handleCORS(NextResponse.json({ success: true }))
     }
@@ -579,24 +594,57 @@ async function handleRoute(request, { params }) {
     if (route === '/kanban/columns/reorder' && method === 'POST') {
       const body = await request.json()
       const updates = body.order.map((id, index) => 
-        db.collection('kanban_columns').updateOne({ id }, { $set: { display_order: index } })
+        db.collection('kanban_columns').updateOne({ id }, { $set: { position: index } })
       )
       await Promise.all(updates)
       return handleCORS(NextResponse.json({ success: true }))
     }
 
     // ============ KANBAN CARDS ============
+    // Cards belong to profit centers but use shared columns
     if (route === '/kanban/cards' && method === 'GET') {
       const holdingAccountId = url.searchParams.get('holding_account_id')
       const profitCenterId = url.searchParams.get('profit_center_id')
-      const columnId = url.searchParams.get('column_id')
+      const companyId = url.searchParams.get('company_id')
+      const columnKey = url.searchParams.get('column_key')
+      const completed = url.searchParams.get('completed')
+      const month = url.searchParams.get('month')
+      const year = url.searchParams.get('year')
+      
       const query = { holding_account_id: holdingAccountId }
+      
+      // Filter by profit center or company (aggregation views)
       if (profitCenterId) {
         query.profit_center_id = profitCenterId
-      } else if (!columnId) {
-        query.profit_center_id = null // Master board
+      } else if (companyId) {
+        // Get all profit centers for this company
+        const pcs = await db.collection('profit_centers').find({ company_id: companyId }).toArray()
+        query.profit_center_id = { $in: pcs.map(pc => pc.id) }
       }
-      if (columnId) query.column_id = columnId
+      // If neither, return all cards (holding-wide view)
+      
+      if (columnKey) {
+        const col = await db.collection('kanban_columns').findOne({ holding_account_id: holdingAccountId, key: columnKey })
+        if (col) query.column_id = col.id
+      }
+      
+      // Filter by completion status
+      if (completed === 'true') {
+        query.completed_at = { $ne: null }
+        // Filter by month/year for completed tasks
+        if (month && year) {
+          const startDate = new Date(parseInt(year), parseInt(month) - 1, 1)
+          const endDate = new Date(parseInt(year), parseInt(month), 0, 23, 59, 59)
+          query.completed_at = { $gte: startDate, $lte: endDate }
+        } else if (year) {
+          const startDate = new Date(parseInt(year), 0, 1)
+          const endDate = new Date(parseInt(year), 11, 31, 23, 59, 59)
+          query.completed_at = { $gte: startDate, $lte: endDate }
+        }
+      } else if (completed === 'false') {
+        query.completed_at = null
+      }
+      
       const cards = await db.collection('kanban_cards').find(query).sort({ display_order: 1 }).toArray()
       const cleaned = cards.map(({ _id, ...rest }) => rest)
       return handleCORS(NextResponse.json(cleaned))
@@ -605,22 +653,42 @@ async function handleRoute(request, { params }) {
     if (route === '/kanban/cards' && method === 'POST') {
       const body = await request.json()
       const count = await db.collection('kanban_cards').countDocuments({ column_id: body.column_id })
+      
+      // Get profit center to also store company_id for filtering
+      let company_id = body.company_id || null
+      if (body.profit_center_id && !company_id) {
+        const pc = await db.collection('profit_centers').findOne({ id: body.profit_center_id })
+        if (pc) company_id = pc.company_id
+      }
+      
       const card = {
         id: uuidv4(),
         holding_account_id: body.holding_account_id,
         profit_center_id: body.profit_center_id || null,
+        company_id,
         column_id: body.column_id,
         title: body.title,
         description: body.description || '',
         amount_cents: body.amount_cents || (body.amount ? Math.round(body.amount * 100) : null),
         due_date: body.due_date || null,
+        assignee_user_id: body.assignee_user_id || null,
         priority: body.priority || 'medium',
+        tags: body.tags || [],
         display_order: body.display_order ?? count,
+        completed_at: null,
         created_at: new Date()
       }
       await db.collection('kanban_cards').insertOne(card)
       const { _id, ...result } = card
       return handleCORS(NextResponse.json(result, { status: 201 }))
+    }
+
+    if (route.match(/^\/kanban\/cards\/[^/]+$/) && method === 'GET') {
+      const id = path[2]
+      const card = await db.collection('kanban_cards').findOne({ id })
+      if (!card) return handleCORS(NextResponse.json({ error: 'Card not found' }, { status: 404 }))
+      const { _id, ...result } = card
+      return handleCORS(NextResponse.json(result))
     }
 
     if (route.match(/^\/kanban\/cards\/[^/]+$/) && method === 'PUT') {
@@ -646,39 +714,51 @@ async function handleRoute(request, { params }) {
     if (route === '/kanban/cards/move' && method === 'POST') {
       const body = await request.json()
       const { card_id, column_id, new_order } = body
-      await db.collection('kanban_cards').updateOne(
-        { id: card_id }, 
-        { $set: { column_id, display_order: new_order, updated_at: new Date() } }
-      )
+      
+      // Check if moving to/from "finished" column to track completed_at
+      const card = await db.collection('kanban_cards').findOne({ id: card_id })
+      const newColumn = await db.collection('kanban_columns').findOne({ id: column_id })
+      const oldColumn = card ? await db.collection('kanban_columns').findOne({ id: card.column_id }) : null
+      
+      const updateData = { column_id, display_order: new_order, updated_at: new Date() }
+      
+      // Set completed_at when moving to finished column
+      if (newColumn?.key === 'finished' && oldColumn?.key !== 'finished') {
+        updateData.completed_at = new Date()
+      }
+      // Clear completed_at when moving out of finished column
+      else if (oldColumn?.key === 'finished' && newColumn?.key !== 'finished') {
+        updateData.completed_at = null
+      }
+      
+      await db.collection('kanban_cards').updateOne({ id: card_id }, { $set: updateData })
       return handleCORS(NextResponse.json({ success: true }))
     }
 
-    // ============ KANBAN INIT (Create default columns) ============
+    // ============ KANBAN INIT + MIGRATION ============
     if (route === '/kanban/init' && method === 'POST') {
       const body = await request.json()
-      const { holding_account_id, profit_center_id } = body
+      const { holding_account_id } = body
       
-      // Check if columns already exist
-      const existing = await db.collection('kanban_columns').findOne({
-        holding_account_id,
-        profit_center_id: profit_center_id || null
-      })
+      // Check if columns already exist for this holding account
+      const existingCount = await db.collection('kanban_columns').countDocuments({ holding_account_id })
       
-      if (!existing) {
+      if (existingCount === 0) {
         const defaultColumns = [
-          { name: 'Leads', color: '#6b7280' },
-          { name: 'In Progress', color: '#3b82f6' },
-          { name: 'Pending', color: '#f59e0b' },
-          { name: 'Closed', color: '#22c55e' }
+          { key: 'idea', title: 'Idea', color: '#6b7280' },
+          { key: 'started', title: 'Started', color: '#3b82f6' },
+          { key: 'half', title: '50% Done', color: '#f59e0b' },
+          { key: 'three_quarters', title: '75% Done', color: '#8b5cf6' },
+          { key: 'finished', title: 'Finished', color: '#22c55e' }
         ]
         
         const columns = defaultColumns.map((col, index) => ({
           id: uuidv4(),
           holding_account_id,
-          profit_center_id: profit_center_id || null,
-          name: col.name,
+          key: col.key,
+          title: col.title,
           color: col.color,
-          display_order: index,
+          position: index,
           created_at: new Date()
         }))
         
@@ -688,6 +768,241 @@ async function handleRoute(request, { params }) {
       }
       
       return handleCORS(NextResponse.json({ message: 'Columns already exist' }))
+    }
+
+    // Migration endpoint to fix duplicate columns and update schema
+    if (route === '/kanban/migrate' && method === 'POST') {
+      const body = await request.json()
+      const { holding_account_id } = body
+      
+      // Get all existing columns (including duplicates from old per-PC model)
+      const allOldColumns = await db.collection('kanban_columns').find({ holding_account_id }).toArray()
+      
+      // Delete all old columns
+      await db.collection('kanban_columns').deleteMany({ holding_account_id })
+      
+      // Create new canonical columns
+      const defaultColumns = [
+        { key: 'idea', title: 'Idea', color: '#6b7280' },
+        { key: 'started', title: 'Started', color: '#3b82f6' },
+        { key: 'half', title: '50% Done', color: '#f59e0b' },
+        { key: 'three_quarters', title: '75% Done', color: '#8b5cf6' },
+        { key: 'finished', title: 'Finished', color: '#22c55e' }
+      ]
+      
+      const newColumns = defaultColumns.map((col, index) => ({
+        id: uuidv4(),
+        holding_account_id,
+        key: col.key,
+        title: col.title,
+        color: col.color,
+        position: index,
+        created_at: new Date()
+      }))
+      
+      await db.collection('kanban_columns').insertMany(newColumns)
+      
+      // Map old column names to new column keys
+      const nameToKeyMap = {
+        'leads': 'idea', 'lead': 'idea', 'idea': 'idea', 'ideas': 'idea',
+        'in progress': 'started', 'started': 'started', 'start': 'started',
+        'pending': 'half', '50% done': 'half', 'half': 'half',
+        '75% done': 'three_quarters', 'three_quarters': 'three_quarters',
+        'closed': 'finished', 'done': 'finished', 'finished': 'finished', 'complete': 'finished'
+      }
+      
+      // Update all existing cards to use new column ids
+      const cards = await db.collection('kanban_cards').find({ holding_account_id }).toArray()
+      for (const card of cards) {
+        const oldColumn = allOldColumns.find(c => c.id === card.column_id)
+        if (oldColumn) {
+          const oldName = (oldColumn.name || oldColumn.title || '').toLowerCase()
+          const newKey = nameToKeyMap[oldName] || 'idea'
+          const newColumn = newColumns.find(c => c.key === newKey)
+          if (newColumn) {
+            await db.collection('kanban_cards').updateOne({ id: card.id }, { $set: { column_id: newColumn.id } })
+          }
+        }
+      }
+      
+      return handleCORS(NextResponse.json({ success: true, columns: newColumns.map(({ _id, ...c }) => c) }))
+    }
+
+    // ============ RESOURCES (LINKS) ============
+    if (route === '/resources' && method === 'GET') {
+      const holdingAccountId = url.searchParams.get('holding_account_id')
+      const scopeType = url.searchParams.get('scope_type')
+      const scopeId = url.searchParams.get('scope_id')
+      
+      const query = { holding_account_id: holdingAccountId }
+      if (scopeType) query.scope_type = scopeType
+      if (scopeId) query.scope_id = scopeId
+      
+      const resources = await db.collection('resources').find(query).sort({ created_at: -1 }).toArray()
+      const cleaned = resources.map(({ _id, ...rest }) => rest)
+      return handleCORS(NextResponse.json(cleaned))
+    }
+
+    if (route === '/resources' && method === 'POST') {
+      const body = await request.json()
+      const resource = {
+        id: uuidv4(),
+        holding_account_id: body.holding_account_id,
+        scope_type: body.scope_type || 'holding', // holding|company|profit_center|card
+        scope_id: body.scope_id || null,
+        title: body.title,
+        url: body.url,
+        type: body.type || 'url', // doc|url|sop|asset
+        created_at: new Date(),
+        created_by_user_id: body.created_by_user_id || null
+      }
+      await db.collection('resources').insertOne(resource)
+      const { _id, ...result } = resource
+      return handleCORS(NextResponse.json(result, { status: 201 }))
+    }
+
+    if (route.match(/^\/resources\/[^/]+$/) && method === 'PUT') {
+      const id = path[1]
+      const body = await request.json()
+      const update = { title: body.title, url: body.url, updated_at: new Date() }
+      if (body.type) update.type = body.type
+      await db.collection('resources').updateOne({ id }, { $set: update })
+      const resource = await db.collection('resources').findOne({ id })
+      const { _id, ...result } = resource
+      return handleCORS(NextResponse.json(result))
+    }
+
+    if (route.match(/^\/resources\/[^/]+$/) && method === 'DELETE') {
+      const id = path[1]
+      await db.collection('resources').deleteOne({ id })
+      return handleCORS(NextResponse.json({ success: true }))
+    }
+
+    // ============ ROCKS (EOS QUARTERLY GOALS) ============
+    if (route === '/rocks' && method === 'GET') {
+      const holdingAccountId = url.searchParams.get('holding_account_id')
+      const companyId = url.searchParams.get('company_id')
+      const profitCenterId = url.searchParams.get('profit_center_id')
+      const status = url.searchParams.get('status')
+      
+      const query = { holding_account_id: holdingAccountId }
+      if (companyId) query.company_id = companyId
+      if (profitCenterId) query.profit_center_id = profitCenterId
+      if (status) query.status = status
+      
+      const rocks = await db.collection('rocks').find(query).sort({ due_date: 1 }).toArray()
+      const cleaned = rocks.map(({ _id, ...rest }) => rest)
+      return handleCORS(NextResponse.json(cleaned))
+    }
+
+    if (route === '/rocks' && method === 'POST') {
+      const body = await request.json()
+      const rock = {
+        id: uuidv4(),
+        holding_account_id: body.holding_account_id,
+        company_id: body.company_id || null,
+        profit_center_id: body.profit_center_id || null,
+        assignee_user_id: body.assignee_user_id,
+        title: body.title,
+        specific: body.specific || '',
+        measurable: body.measurable || '',
+        attainable: body.attainable || '',
+        realistic: body.realistic || '',
+        time_bound: body.time_bound || '',
+        start_date: body.start_date || null,
+        due_date: body.due_date,
+        status: 'active',
+        completed_at: null,
+        created_at: new Date()
+      }
+      await db.collection('rocks').insertOne(rock)
+      const { _id, ...result } = rock
+      return handleCORS(NextResponse.json(result, { status: 201 }))
+    }
+
+    if (route.match(/^\/rocks\/[^/]+$/) && method === 'GET') {
+      const id = path[1]
+      const rock = await db.collection('rocks').findOne({ id })
+      if (!rock) return handleCORS(NextResponse.json({ error: 'Rock not found' }, { status: 404 }))
+      const { _id, ...result } = rock
+      return handleCORS(NextResponse.json(result))
+    }
+
+    if (route.match(/^\/rocks\/[^/]+$/) && method === 'PUT') {
+      const id = path[1]
+      const body = await request.json()
+      const update = { ...body, updated_at: new Date() }
+      delete update.id
+      delete update._id
+      // Handle completion
+      if (body.status === 'completed' && !body.completed_at) {
+        update.completed_at = new Date()
+      } else if (body.status === 'active') {
+        update.completed_at = null
+      }
+      await db.collection('rocks').updateOne({ id }, { $set: update })
+      const rock = await db.collection('rocks').findOne({ id })
+      const { _id, ...result } = rock
+      return handleCORS(NextResponse.json(result))
+    }
+
+    if (route.match(/^\/rocks\/[^/]+$/) && method === 'DELETE') {
+      const id = path[1]
+      await db.collection('rocks').deleteOne({ id })
+      return handleCORS(NextResponse.json({ success: true }))
+    }
+
+    // ============ TEAM MEMBERS ============
+    if (route === '/team' && method === 'GET') {
+      const holdingAccountId = url.searchParams.get('holding_account_id')
+      const members = await db.collection('team_members').find({ holding_account_id: holdingAccountId }).toArray()
+      const cleaned = members.map(({ _id, ...rest }) => rest)
+      return handleCORS(NextResponse.json(cleaned))
+    }
+
+    if (route === '/team' && method === 'POST') {
+      const body = await request.json()
+      // Check if already exists
+      const existing = await db.collection('team_members').findOne({ 
+        holding_account_id: body.holding_account_id, 
+        email: body.email.toLowerCase() 
+      })
+      if (existing) {
+        return handleCORS(NextResponse.json({ error: 'Member already exists' }, { status: 400 }))
+      }
+      
+      const member = {
+        id: uuidv4(),
+        holding_account_id: body.holding_account_id,
+        email: body.email.toLowerCase(),
+        name: body.name || '',
+        role: body.role || 'member', // admin|member|viewer
+        status: 'pending', // pending|active
+        invited_at: new Date(),
+        created_at: new Date()
+      }
+      await db.collection('team_members').insertOne(member)
+      const { _id, ...result } = member
+      return handleCORS(NextResponse.json(result, { status: 201 }))
+    }
+
+    if (route.match(/^\/team\/[^/]+$/) && method === 'PUT') {
+      const id = path[1]
+      const body = await request.json()
+      const update = { updated_at: new Date() }
+      if (body.name) update.name = body.name
+      if (body.role) update.role = body.role
+      if (body.status) update.status = body.status
+      await db.collection('team_members').updateOne({ id }, { $set: update })
+      const member = await db.collection('team_members').findOne({ id })
+      const { _id, ...result } = member
+      return handleCORS(NextResponse.json(result))
+    }
+
+    if (route.match(/^\/team\/[^/]+$/) && method === 'DELETE') {
+      const id = path[1]
+      await db.collection('team_members').deleteOne({ id })
+      return handleCORS(NextResponse.json({ success: true }))
     }
 
     return handleCORS(NextResponse.json({ error: `Route ${route} not found` }, { status: 404 }))
